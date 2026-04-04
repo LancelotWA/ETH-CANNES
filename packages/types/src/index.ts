@@ -109,6 +109,71 @@ export interface Contact {
   profile?: UserSummary | null;
 }
 
+// ─── Unilink (Unlink SDK integration) ───────────────────────────────────────
+
+/** Unlink transaction status as returned by the SDK */
+export type UnlinkTxStatus = "pending" | "relayed" | "processed" | "failed";
+
+/** Unlink transaction type */
+export type UnlinkTxType = "deposit" | "transfer" | "withdraw" | "execute";
+
+/** Result returned after any Unlink operation (deposit, transfer, withdraw) */
+export interface UnlinkOperationResult {
+  txId: string;
+  status: UnlinkTxStatus;
+}
+
+/** Unlink account info stored per user */
+export interface UnlinkAccount {
+  /** Bech32m Unlink address, e.g. "unlink1abc..." */
+  unlinkAddress: string;
+  /** Whether the account has been registered on the Unlink pool */
+  registered: boolean;
+}
+
+/** Token balance inside the Unlink privacy pool */
+export interface UnlinkBalance {
+  token: WalletAddress;
+  tokenSymbol: string;
+  /** Amount in wei (string to preserve precision) */
+  amount: string;
+}
+
+/** Payload sent by frontend to initiate a private transfer */
+export interface UnlinkTransferPayload {
+  senderUserId: string;
+  recipientUserId: string;
+  token: WalletAddress;
+  amount: string;
+  tokenSymbol: string;
+}
+
+/** Payload sent by frontend to deposit into the privacy pool */
+export interface UnlinkDepositPayload {
+  userId: string;
+  token: WalletAddress;
+  amount: string;
+}
+
+/** Payload sent by frontend to withdraw from the privacy pool */
+export interface UnlinkWithdrawPayload {
+  userId: string;
+  recipientEvmAddress: WalletAddress;
+  token: WalletAddress;
+  amount: string;
+}
+
+// ─── Unilink Constants ──────────────────────────────────────────────────────
+
+/** Base Sepolia test token (faucet) */
+export const UNLINK_TEST_TOKEN: WalletAddress = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7";
+
+/** Unlink privacy pool address on Base Sepolia */
+export const UNLINK_POOL_ADDRESS: WalletAddress = "0x647f9b99af97e4b79DD9Dd6de3b583236352f482";
+
+/** Base Sepolia chain ID */
+export const UNLINK_CHAIN_ID = 84532;
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface VerifyWalletPayload {

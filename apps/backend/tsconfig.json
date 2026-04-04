@@ -4,7 +4,9 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@ethcannes/types": ["../../packages/types/src/index.ts"],
+      "@ethcannes/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   "include": ["src", "test", "prisma"]

@@ -33,6 +33,10 @@ model User {
   ensName       String?  @unique
   displayName   String
   avatarUrl     String?
+  /// Encrypted mnemonic for the user's Unlink privacy account
+  unlinkMnemonic String?
+  /// Bech32m Unlink address (e.g. "unlink1abc...")
+  unlinkAddress  String?  @unique
   createdAt     DateTime @default(now())
 
   sentTxs       Transaction[] @relation("Sender")
