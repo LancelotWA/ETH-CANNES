@@ -8,17 +8,19 @@ export class PaymentsRepository {
 
   createTransaction(data: {
     senderUserId: string;
-    recipientUserId: string;
+    recipientUserId?: string;
     amount: number;
     tokenSymbol: string;
+    mode: "PUBLIC" | "PRIVATE";
     note?: string;
   }) {
     return this.prisma.transaction.create({
       data: {
         senderUserId: data.senderUserId,
-        recipientUserId: data.recipientUserId,
+        recipientUserId: data.recipientUserId ?? null,
         amount: data.amount,
         tokenSymbol: data.tokenSymbol,
+        mode: data.mode,
         note: data.note,
         status: "PENDING"
       }
@@ -38,6 +40,19 @@ export class PaymentsRepository {
         OR: [{ senderUserId: userId }, { recipientUserId: userId }]
       },
       orderBy: { createdAt: "desc" }
+    });
+  }
+
+  listPublicFeed(limit = 50) {
+    return this.prisma.transaction.findMany({
+      where: { mode: "PUBLIC", status: "COMPLETED" },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        sender: { select: { displayName: true, ensName: true, avatarUrl: true } },
+        recipient: { select: { displayName: true, ensName: true, avatarUrl: true } },
+        reactions: true
+      }
     });
   }
 }
