@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentMode {
+  PUBLIC
+  PRIVATE
+}
+
+enum QrCodeType {
+  ONE_TIME
+  PERMANENT
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  walletAddress String   @unique
+  ensName       String?  @unique
+  displayName   String
+  avatarUrl     String?
+  /// Encrypted mnemonic for the user's Unlink privacy account
+  unlinkMnemonic String?
+  /// Bech32m Unlink address (e.g. "unlink1abc...")
+  unlinkAddress  String?  @unique
+  createdAt     DateTime @default(now())
+
+  sentTxs       Transaction[] @relation("Sender")
+  recvTxs       Transaction[] @relation("Recipient")
+  reactions     Reaction[]
+  qrCodes       QrCode[]
+  paymentLinks  PaymentLink[]
+  contacts      Contact[]     @relation("ContactOwner")
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  senderUserId    String
+  /// null when mode = PRIVATE – recipient identity is not exposed
+  recipientUserId String?
+  amount          Decimal           @db.Decimal(18, 6)
+  tokenSymbol     String
+  note            String?
+  mode            PaymentMode       @default(PUBLIC)
+  status          TransactionStatus @default(PENDING)
+  txHash          String?
+  createdAt       DateTime          @default(now())
+
+  sender    User      @relation("Sender", fields: [senderUserId], references: [id])
+  recipient User?     @relation("Recipient", fields: [recipientUserId], references: [id])
+  reactions Reaction[]
+
+  @@index([senderUserId])
+  @@index([recipientUserId])
+  @@index([mode])
+}
+
+model Reaction {
+  id            String      @id @default(uuid())
+  transactionId String
+  userId        String
+  emoji         String      @db.VarChar(8)
+  createdAt     DateTime    @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@unique([transactionId, userId, emoji])
+  @@index([transactionId])
+}
+
+model QrCode {
+  id          String      @id @default(uuid())
+  ownerId     String
+  type        QrCodeType  @default(ONE_TIME)
+  amount      Decimal?    @db.Decimal(18, 6)
+  tokenSymbol String      @default("USDC")
+  mode        PaymentMode @default(PUBLIC)
+  used        Boolean     @default(false)
+  expiresAt   DateTime?
+  createdAt   DateTime    @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+}
+
+model PaymentLink {
+  id          String      @id @default(uuid())
+  ownerId     String
+  /// URL-safe alias, e.g. "alice" → /pay/alice
+  alias       String      @unique
+  amount      Decimal?    @db.Decimal(18, 6)
+  tokenSymbol String      @default("USDC")
+  mode        PaymentMode @default(PUBLIC)
+  createdAt   DateTime    @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+}
+
+model Contact {
+  id             String   @id @default(uuid())
+  userId         String
+  /// null when isGhost = true
+  contactUserId  String?
+  alias          String
+  /// Ghost contacts are created for private payments – no on-chain link
+  isGhost        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  owner User @relation("ContactOwner", fields: [userId], references: [id])
+
+  @@index([userId])
+}
