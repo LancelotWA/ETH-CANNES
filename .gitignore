@@ -41,7 +41,8 @@ tmp/
 .cache/
 
 lancelot.js
-lancelot2.js
+lancelot2.mjs
+lancelot_QRCODE.mjs
 
 # Claude memory
 project_personne_d.md
