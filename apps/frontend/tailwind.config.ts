@@ -5,14 +5,21 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Sora", "ui-sans-serif", "system-ui"]
+        sans: ["Syne", "sans-serif"],
+        mono: ["DM Mono", "monospace"]
       },
       colors: {
-        brand: {
-          50: "#ecfdf5",
-          500: "#10b981",
-          700: "#047857"
-        }
+        white: "rgb(var(--tw-color-white) / <alpha-value>)",
+        black: "rgb(var(--tw-color-black) / <alpha-value>)",
+        surface: "var(--surface)",
+        "surface-hover": "var(--surface-hover)",
+        border: "var(--border)",
+        "border-hover": "var(--border-hover)",
+        "text-muted": "var(--text-muted)",
+        public: "var(--public)",
+        "public-dim": "var(--public-dim)",
+        private: "var(--private)",
+        "private-dim": "var(--private-dim)",
       }
     }
   },

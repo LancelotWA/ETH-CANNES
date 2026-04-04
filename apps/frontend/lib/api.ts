@@ -1,23 +1,46 @@
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3000'
 
-export async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message)
+    this.name = 'ApiError'
   }
-
-  return response.json() as Promise<T>;
 }
 
-export async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+async function request<T>(
+  path: string,
+  options?: RequestInit,
+  token?: string | null
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers ?? {}),
   }
-  return response.json() as Promise<T>;
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new ApiError(res.status, body?.message ?? `HTTP ${res.status}`)
+  }
+
+  return res.json() as Promise<T>
 }
+
+export const api = {
+  get: <T>(path: string, token?: string | null) =>
+    request<T>(path, { method: 'GET' }, token),
+
+  post: <T>(path: string, body: unknown, token?: string | null) =>
+    request<T>(path, { method: 'POST', body: JSON.stringify(body) }, token),
+
+  patch: <T>(path: string, body: unknown, token?: string | null) =>
+    request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }, token),
+}
+
+export const getJson = api.get;
+export const postJson = api.post;
+export const patchJson = api.patch;
+
+export { ApiError }
