@@ -1,0 +1,41 @@
+# Node
+node_modules/
+.npm/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Docker
+*.pid
+postgres-data/
+
+# Prisma generated client (never commit — generated at deploy time)
+apps/backend/node_modules/.prisma/
+
+# Misc
+tmp/
+.cache/

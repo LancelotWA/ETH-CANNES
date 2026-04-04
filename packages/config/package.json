@@ -1,0 +1,11 @@
+{
+  "name": "@ethcannes/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "build": "echo \"No build for @ethcannes/config\"",
+    "lint": "echo \"No lint for @ethcannes/config\"",
+    "test": "echo \"No tests for @ethcannes/config\""
+  }
+}

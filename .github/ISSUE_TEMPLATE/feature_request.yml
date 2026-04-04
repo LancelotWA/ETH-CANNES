@@ -1,0 +1,28 @@
+name: Feature Request
+description: Propose a product or engineering feature
+labels: [enhancement]
+body:
+  - type: input
+    id: problem
+    attributes:
+      label: Problem statement
+      placeholder: What user problem are we solving?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: Describe expected behavior and scope
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Frontend
+        - Backend
+        - Web3 / Onchain
+        - DevOps / CI
+        - Product / UX
