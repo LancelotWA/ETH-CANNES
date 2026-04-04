@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import React, { ReactNode } from "react";
 
-export function TransitionLink({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
+export function TransitionLink({ href, children, className, style }: { href: string; children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const router = useRouter();
 
   const handleTransition = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -18,7 +18,7 @@ export function TransitionLink({ href, children, className }: { href: string; ch
   };
 
   return (
-    <a href={href} className={className} onClick={handleTransition}>
+    <a href={href} className={className} style={style} onClick={handleTransition}>
       {children}
     </a>
   );

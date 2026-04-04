@@ -1,28 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
+  /* kept for backward compat with wallet-guard ICEBERG title */
   .metallic-text {
-    background: linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #d4d4d8 25%,
-      #a1a1aa 50%,
-      #d4d4d8 75%,
-      #e4e4e7 100%
-    );
+    background: linear-gradient(180deg, #ffffff 0%, #d4d4d8 25%, #a1a1aa 50%, #d4d4d8 75%, #e4e4e7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -35,84 +23,109 @@
     opacity: 0 !important;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Fintech card styles */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+  }
+  .card-glow {
+    box-shadow: 0 0 40px var(--accent-glow);
+  }
+
+  /* Button press effect */
+  .btn-press {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn-press:active {
+    transform: scale(0.96);
+  }
+
+  /* Glass for backward compat */
+  .glass {
+    background: rgba(26, 26, 28, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+  }
+  .glass-card {
+    background: rgba(26, 26, 28, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
 }
 
 @layer base {
+  /* ── PRIVATE MODE (default / dark) ─────────────────────────────── */
   :root {
     --tw-color-white: 255 255 255;
     --tw-color-black: 0 0 0;
-    --bg: #050814;
-    --surface: #0a0e23;
-    --surface-hover: #101633;
-    --border: #16203f;
-    --border-hover: #22305a;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
-    --public: #2dd4bf;
-    --public-dim: rgba(45, 212, 191, 0.15);
-    --private: #c084fc;
-    --private-dim: rgba(192, 132, 252, 0.15);
+
+    --bg:             #0B0B0C;
+    --surface:        #1A1A1C;
+    --surface-hover:  #222226;
+    --border:         rgba(255,255,255,0.07);
+    --border-hover:   rgba(255,255,255,0.14);
+
+    --text:           #FFFFFF;
+    --text-muted:     #888892;
+    --text-subtle:    #44444A;
+
+    --accent:         #7C3AED;
+    --accent-2:       #6366F1;
+    --accent-glow:    rgba(124, 58, 237, 0.25);
+    --accent-dim:     rgba(124, 58, 237, 0.12);
+
+    /* legacy refs kept for old components */
+    --public:         #2dd4bf;
+    --public-dim:     rgba(45,212,191,0.15);
+    --private:        #7C3AED;
+    --private-dim:    rgba(124,58,237,0.15);
   }
 
+  /* ── PUBLIC MODE (light) ─────────────────────────────────────────── */
   .theme-public {
-    --tw-color-white: 17 24 39; /* Text becomes black */
-    --tw-color-black: 255 255 255; /* Backgrounds become white */
-    --bg: #ffe082;
-    --surface: #ffecb3;
-    --surface-hover: #fff3ce;
-    --border: #ffd54f;
-    --border-hover: #ffca28;
-    --text: #111827;
-    --text-muted: #4b5563;
+    --tw-color-white: 17 24 39;
+    --tw-color-black: 255 255 255;
+
+    --bg:             #F7F7F8;
+    --surface:        #FFFFFF;
+    --surface-hover:  #F0F0F4;
+    --border:         rgba(0,0,0,0.07);
+    --border-hover:   rgba(0,0,0,0.14);
+
+    --text:           #111111;
+    --text-muted:     #6B7280;
+    --text-subtle:    #C4C4CC;
+
+    --accent:         #2563EB;
+    --accent-2:       #3B82F6;
+    --accent-glow:    rgba(37, 99, 235, 0.18);
+    --accent-dim:     rgba(37, 99, 235, 0.08);
+
+    --public:         #2563EB;
+    --public-dim:     rgba(37,99,235,0.1);
+    --private:        #7C3AED;
+    --private-dim:    rgba(124,58,237,0.1);
   }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     background-color: var(--bg);
     color: var(--text);
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
-    transition: background-color 0.8s ease-in-out, color 0.8s ease-in-out;
+    /* NO transition here — curtain animation handles the visual switch */
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
-    font-family: 'Syne', sans-serif;
-  }
+  h1, h2, h3, h4 { font-family: 'Inter', sans-serif; }
 
-  ::selection {
-    background: var(--private);
-    color: #fff;
-  }
+  ::selection { background: var(--accent); color: #fff; }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 }
-
-@layer utilities {
-  .glass {
-    background: rgba(16, 16, 20, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-  }
-  .glass-card {
-    background: rgba(20, 20, 25, 0.7);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  }
-}
