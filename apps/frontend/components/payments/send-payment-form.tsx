@@ -214,16 +214,24 @@ export function SendPaymentForm() {
       <button
         type="submit"
         disabled={!canSend}
-        className={`w-full mt-2 rounded-[2rem] py-3 text-base font-black uppercase shadow-xl transition-all border border-white/20 ${
-          canSend
-            ? "bg-white text-black hover:scale-105 active:scale-95"
-            : "opacity-30 cursor-not-allowed bg-white/10 text-white/40"
+        className={`w-full mt-2 rounded-[2rem] py-3 text-base font-black uppercase shadow-xl transition-all border ${
+          status === "success"
+            ? "bg-green-500 text-white border-green-400"
+            : status === "error"
+            ? "bg-red-500 text-white border-red-400"
+            : canSend
+            ? "bg-white text-black border-white/20 hover:scale-105 active:scale-95"
+            : "opacity-30 cursor-not-allowed bg-white/10 text-white/40 border-white/20"
         }`}
       >
         {status === "sending"
           ? "SIGNING..."
           : status === "confirming"
             ? "CONFIRMING..."
+            : status === "success"
+            ? "SENT !"
+            : status === "error"
+            ? "DENIED"
             : "SEND"}
       </button>
 

@@ -2,10 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import Dock from './dock';
-import { Home, Send, History, Users, QrCode } from 'lucide-react';
+import { Home, History, Users, LogOut } from 'lucide-react';
+import { useDisconnect } from 'wagmi';
+import { useAppStore } from '@/store/useAppStore';
 
 export function AppDock() {
   const router = useRouter();
+  const { disconnect } = useDisconnect();
+  const storeDisconnect = useAppStore((s) => s.disconnect);
 
   const handleNavigate = (href: string) => {
     const page = document.getElementById("page-transition-wrapper");
@@ -15,12 +19,17 @@ export function AppDock() {
     setTimeout(() => router.push(href), 300);
   };
 
+  const handleLogout = () => {
+    disconnect();
+    storeDisconnect();
+    router.push("/");
+  };
+
   const items = [
     { label: "Dashboard", icon: <Home />, onClick: () => handleNavigate('/dashboard') },
-    { label: "Send Payment", icon: <Send />, onClick: () => handleNavigate('/send') },
-    { label: "Request QR", icon: <QrCode />, onClick: () => handleNavigate('/request') },
     { label: "History", icon: <History />, onClick: () => handleNavigate('/feed') },
     { label: "Contacts", icon: <Users />, onClick: () => handleNavigate('/contacts') },
+    { label: "Log Out", icon: <LogOut />, onClick: handleLogout },
   ];
 
   return <Dock items={items} />;
