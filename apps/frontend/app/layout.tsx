@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Providers from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
-        <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">{children}</main>
+        <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">
+          <Providers>{children}</Providers>
+        </main>
       </body>
     </html>
   );
