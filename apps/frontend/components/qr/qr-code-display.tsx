@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { useApiMutation } from "@/hooks/useApi";
 import type { PaymentMode, QrCodeRecord, QrCodeType } from "@ethcannes/types";
+import { useAppStore } from "@/store/useAppStore";
 
 interface QrCodeDisplayProps {
   ownerId: string;
@@ -11,10 +12,11 @@ interface QrCodeDisplayProps {
 
 export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
   const [type, setType] = useState<QrCodeType>("ONE_TIME");
-  const [mode, setMode] = useState<PaymentMode>("PUBLIC");
   const [amount, setAmount] = useState("");
   const [qr, setQr] = useState<QrCodeRecord | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  
+  const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   const { mutateAsync: generateQr, isPending: loading } = useApiMutation<QrCodeRecord>("POST", "/qr-codes");
 
@@ -23,7 +25,7 @@ export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
       const result = await generateQr({
         ownerId,
         type,
-        mode,
+        mode: globalMode,
         amount: amount ? Number(amount) : undefined,
         tokenSymbol: "USDC"
       });
@@ -64,22 +66,6 @@ export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
             {t === "ONE_TIME" ? "ONE-TIME" : "REUSABLE"}
           </button>
         ))}
-      </fieldset>
-
-      <fieldset className="flex gap-4">
-        {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => {
-          const isActive = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`flex-1 pb-2 border-b-2 font-black tracking-widest text-base uppercase transition-all duration-300 ${isActive ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/60"}`}
-            >
-              {m}
-            </button>
-          );
-        })}
       </fieldset>
 
       <label className="block text-sm font-bold text-white/50 uppercase tracking-widest">

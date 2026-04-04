@@ -4,7 +4,7 @@ import React, { FormEvent, useState } from "react";
 
 import { useEnsResolution } from "@/hooks/useEnsResolution";
 import { postJson } from "@/lib/api";
-import type { PaymentMode } from "@ethcannes/types";
+import { useAppStore } from "@/store/useAppStore";
 
 interface SendPaymentFormProps {
   senderUserId: string;
@@ -14,9 +14,10 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
   const [ensInput, setEnsInput] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
-  const [mode, setMode] = useState<PaymentMode>("PUBLIC");
   const [status, setStatus] = useState<string | null>(null);
   const { resolveEns, loading, error } = useEnsResolution();
+  
+  const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -24,7 +25,7 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
 
     let recipientUserId: string | undefined;
 
-    if (mode === "PUBLIC") {
+    if (globalMode === "PUBLIC") {
       const resolution = await resolveEns(ensInput);
       if (!resolution?.address) {
         setStatus("Recipient ENS not found");
@@ -38,45 +39,25 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
       recipientUserId,
       amount: Number(amount),
       tokenSymbol: "USDC",
-      mode,
+      mode: globalMode,
       note: note || undefined
     });
 
-    const label = mode === "PRIVATE" ? "Private payment sent via UNILINK" : `Payment queued for ${ensInput}`;
+    const label = globalMode === "PRIVATE" ? "Private payment sent via UNILINK" : `Payment queued for ${ensInput}`;
     setStatus(label);
   }
 
   return (
     <form className="space-y-3 flex flex-col" onSubmit={onSubmit}>
 
-      <fieldset className="flex gap-4">
-        {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => {
-          const isActive = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`flex-1 pb-1 border-b-2 font-black tracking-widest text-sm md:text-base uppercase transition-all duration-300 ${
-                isActive
-                  ? "border-white text-white"
-                  : "border-transparent text-white/30 hover:text-white/60"
-              }`}
-            >
-              {m}
-            </button>
-          );
-        })}
-      </fieldset>
-
-      <div className={`transition-all duration-500 overflow-hidden ${mode === "PRIVATE" ? "max-h-24 opacity-100 mt-1" : "max-h-0 opacity-0 m-0"}`}>
+      <div className={`transition-all duration-500 overflow-hidden ${globalMode === "PRIVATE" ? "max-h-24 opacity-100 mt-1" : "max-h-0 opacity-0 m-0"}`}>
         <div className="border border-white/20 bg-black/40 px-4 py-2 text-xs text-white/70 font-medium">
           <p>UNILINK stealth routing activated.</p>
         </div>
       </div>
 
-      <div className={`transition-all duration-500 overflow-hidden ${mode === "PUBLIC" ? "max-h-24 opacity-100" : "max-h-0 opacity-0 m-0"}`}>
-        {mode === "PUBLIC" && (
+      <div className={`transition-all duration-500 overflow-hidden ${globalMode === "PUBLIC" ? "max-h-24 opacity-100" : "max-h-0 opacity-0 m-0"}`}>
+        {globalMode === "PUBLIC" && (
           <label className="block text-xs font-bold text-white/50 uppercase tracking-widest">
             Recipient
             <input
@@ -84,7 +65,7 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
               value={ensInput}
               onChange={(e) => setEnsInput(e.target.value)}
               placeholder="alice.eth"
-              required={mode === "PUBLIC"}
+              required={globalMode === "PUBLIC"}
             />
           </label>
         )}
@@ -121,8 +102,8 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
       <button 
         type="submit" 
         disabled={loading}
-        className={`w-full mt-2 rounded-[2rem] py-2 text-base font-black uppercase shadow-xl transition-all hover:scale-105 active:scale-95 ${
-          loading ? "opacity-50 cursor-not-allowed bg-white/20 text-white" : "bg-white text-black"
+        className={`w-full mt-2 rounded-[2rem] py-2 text-base font-black uppercase shadow-xl transition-all hover:scale-105 active:scale-95 border border-white/20 ${
+          loading ? "opacity-50 cursor-not-allowed bg-black/20 text-white" : "bg-white text-black"
         }`}
       >
         {loading ? "PROCESSING..." : "CONFIRM"}

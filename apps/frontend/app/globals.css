@@ -39,6 +39,8 @@
 
 @layer base {
   :root {
+    --tw-color-white: 255 255 255;
+    --tw-color-black: 0 0 0;
     --bg: #050814;
     --surface: #0a0e23;
     --surface-hover: #101633;
@@ -52,6 +54,18 @@
     --private-dim: rgba(192, 132, 252, 0.15);
   }
 
+  .theme-public {
+    --tw-color-white: 17 24 39; /* Text becomes black */
+    --tw-color-black: 255 255 255; /* Backgrounds become white */
+    --bg: #ffe082;
+    --surface: #ffecb3;
+    --surface-hover: #fff3ce;
+    --border: #ffd54f;
+    --border-hover: #ffca28;
+    --text: #111827;
+    --text-muted: #4b5563;
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -63,6 +77,7 @@
     color: var(--text);
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
+    transition: background-color 0.8s ease-in-out, color 0.8s ease-in-out;
   }
 
   h1, h2, h3, h4 {

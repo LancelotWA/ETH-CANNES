@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
-import LightRays from "@/components/ui/light-rays";
 import { AppDock } from "@/components/ui/app-dock";
 import { WalletGuard } from "@/components/wallet/wallet-guard";
+import { GlobalModeSwitch } from "@/components/ui/global-mode-switch";
+import { ThemeWrapper } from "@/components/providers/theme-wrapper";
 
 export const metadata: Metadata = {
   title: "ICEBERG",
@@ -16,11 +17,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AppProviders>
-          <LightRays raysColor="#8b5cf6" raysSpeed={0.5} pulsating={false} />
-          <WalletGuard>
-            <AppDock />
-            <main className="mx-auto min-h-screen max-w-7xl relative">{children}</main>
-          </WalletGuard>
+          <GlobalModeSwitch />
+          <ThemeWrapper>
+            <WalletGuard>
+              <AppDock />
+              <main className="mx-auto min-h-screen max-w-7xl relative">{children}</main>
+            </WalletGuard>
+          </ThemeWrapper>
         </AppProviders>
       </body>
     </html>

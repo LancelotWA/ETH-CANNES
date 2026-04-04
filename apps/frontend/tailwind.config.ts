@@ -9,6 +9,8 @@ const config: Config = {
         mono: ["DM Mono", "monospace"]
       },
       colors: {
+        white: "rgb(var(--tw-color-white) / <alpha-value>)",
+        black: "rgb(var(--tw-color-black) / <alpha-value>)",
         surface: "var(--surface)",
         "surface-hover": "var(--surface-hover)",
         border: "var(--border)",

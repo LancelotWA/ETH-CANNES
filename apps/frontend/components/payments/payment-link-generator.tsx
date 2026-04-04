@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useApiMutation } from "@/hooks/useApi";
 import type { PaymentLinkRecord, PaymentMode } from "@ethcannes/types";
+import { useAppStore } from "@/store/useAppStore";
 
 interface PaymentLinkGeneratorProps {
   ownerId: string;
@@ -11,8 +12,9 @@ interface PaymentLinkGeneratorProps {
 export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
   const [alias, setAlias] = useState("");
   const [amount, setAmount] = useState("");
-  const [mode, setMode] = useState<PaymentMode>("PUBLIC");
   const [link, setLink] = useState<PaymentLinkRecord | null>(null);
+  
+  const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   const { mutateAsync: generateLink, isPending: loading, error } = useApiMutation<PaymentLinkRecord>("POST", "/payment-links");
 
@@ -23,7 +25,7 @@ export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
         alias: alias.toLowerCase().trim(),
         amount: amount ? Number(amount) : undefined,
         tokenSymbol: "USDC",
-        mode
+        mode: globalMode
       });
       setLink(result);
     } catch (e: unknown) {
@@ -42,25 +44,6 @@ export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
 
   return (
     <div className="space-y-6 flex flex-col">
-      <fieldset className="flex gap-4">
-        {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => {
-          const isActive = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`flex-1 pb-2 border-b-2 font-black tracking-widest text-base uppercase transition-all duration-300 ${
-                isActive
-                  ? "border-white text-white"
-                  : "border-transparent text-white/30 hover:text-white/60"
-              }`}
-            >
-              {m === "PUBLIC" ? "PUBLIC LINK" : "PRIVATE LINK"}
-            </button>
-          );
-        })}
-      </fieldset>
 
       <label className="block text-sm font-bold text-white/50 uppercase tracking-widest">
         ALIAS
