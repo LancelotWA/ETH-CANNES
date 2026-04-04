@@ -12,10 +12,11 @@ interface WalletConnectionProps {
 
 export function WalletConnection({ buttonStyle }: WalletConnectionProps = {}) {
   const [mounted, setMounted] = useState(false);
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { connect, isPending } = useConnect();
-  const { data: balanceData } = useBalance({ address });
+  const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
+  const { data: balanceData } = useBalance({
+    address: address as `0x${string}` | undefined,
+  });
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -43,7 +44,7 @@ export function WalletConnection({ buttonStyle }: WalletConnectionProps = {}) {
           {formattedBal} ETH
         </p>
         <button
-          onClick={() => disconnect()}
+          onClick={() => open()}
           className="mt-2 px-4 py-1.5 rounded-full text-xs font-mono transition-opacity hover:opacity-60"
           style={{
             background: "var(--surface)",
@@ -51,34 +52,24 @@ export function WalletConnection({ buttonStyle }: WalletConnectionProps = {}) {
             color: "var(--text-muted)",
           }}
         >
-          Disconnect
+          Wallet
         </button>
       </div>
     );
   }
 
-  const handleConnect = () => {
-    connect({ connector: walletConnect({ projectId, showQrModal: true }) });
-  };
-
   return (
     <button
-      onClick={handleConnect}
-      disabled={isPending}
-      className="w-full h-14 rounded-[14px] text-sm font-sans font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+      onClick={() => open()}
+      className="w-full h-14 rounded-[14px] text-sm font-sans font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
       style={{
-        background: isPending
-          ? "var(--surface)"
-          : "linear-gradient(135deg,#7C3AED,#6366F1)",
-        boxShadow: isPending
-          ? "none"
-          : "0 8px 24px rgba(124,58,237,0.4)",
-        color: isPending ? "var(--text-muted)" : "#fff",
-        ...(!isPending ? buttonStyle : {}),
+        background: "linear-gradient(135deg,#7C3AED,#6366F1)",
+        boxShadow: "0 8px 24px rgba(124,58,237,0.4)",
+        color: "#fff",
+        ...buttonStyle,
       }}
     >
-      {isPending ? "Connecting…" : "Connect Wallet"}
+      Connect Wallet
     </button>
-
   );
 }
