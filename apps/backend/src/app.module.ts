@@ -11,6 +11,7 @@ import { PaymentLinksModule } from "./modules/payment-links/payment-links.module
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { QrCodesModule } from "./modules/qr-codes/qr-codes.module";
 import { TransactionsModule } from "./modules/transactions/transactions.module";
+import { UnilinkModule } from "./modules/unilink/unilink.module";
 import { UsersModule } from "./modules/users/users.module";
 import { PrismaModule } from "./prisma/prisma.module";
 
@@ -38,7 +39,8 @@ import { PrismaModule } from "./prisma/prisma.module";
     FeedModule,
     QrCodesModule,
     PaymentLinksModule,
-    ContactsModule
+    ContactsModule,
+    UnilinkModule
   ]
 })
 export class AppModule {}
