@@ -83,7 +83,7 @@ export function DecryptedText({
 
   const computeOrder = useCallback(
     (len: number) => {
-      const order = [];
+      const order: number[] = [];
       if (len <= 0) return order;
       if (revealDirection === 'start') {
         for (let i = 0; i < len; i++) order.push(i);

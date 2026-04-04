@@ -23,7 +23,7 @@ export function FeedItemCard({ item }: FeedItemCardProps) {
           <span className="text-white shrink-0">{item.recipient.ensName ?? item.recipient.displayName}</span>
         </div>
         {item.note && (
-          <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">"{item.note}"</p>
+          <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">&ldquo;{item.note}&rdquo;</p>
         )}
       </div>
 

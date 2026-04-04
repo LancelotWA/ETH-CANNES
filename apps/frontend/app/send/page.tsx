@@ -3,13 +3,10 @@
 import { Suspense } from "react";
 import { SendPaymentForm } from "@/components/payments/send-payment-form";
 import { WalletConnection } from "@/components/wallet/wallet-connection";
-import { useAppStore } from "@/store/useAppStore";
 import { DecryptedText } from "@/components/ui/decrypted-text";
 import { motion } from "framer-motion";
 
 export default function SendPage() {
-  const activeUserId = useAppStore((state) => state.activeUserId);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -28,7 +25,7 @@ export default function SendPage() {
 
       <Suspense fallback={<p className="text-zinc-500 animate-pulse text-center">Chargement...</p>}>
         <div className="w-full max-w-2xl backdrop-blur-md bg-white/5 p-4 md:p-6 rounded-[2rem] shadow-2xl border border-white/10">
-          <SendPaymentForm senderUserId={activeUserId ?? ""} />
+          <SendPaymentForm />
         </div>
       </Suspense>
     </motion.div>

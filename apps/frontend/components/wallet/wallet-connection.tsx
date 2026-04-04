@@ -1,8 +1,8 @@
 "use client";
 
-import { useAccount, useDisconnect, useBalance, useConnect } from "wagmi";
-import { walletConnect } from "wagmi/connectors";
-import { projectId } from "@/lib/wagmi";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit } from "@reown/appkit/react";
+import { useBalance } from "wagmi";
 import { useState, useEffect } from "react";
 
 interface WalletConnectionProps {
@@ -79,5 +79,6 @@ export function WalletConnection({ buttonStyle }: WalletConnectionProps = {}) {
     >
       {isPending ? "Connecting…" : "Connect Wallet"}
     </button>
+
   );
 }
