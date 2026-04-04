@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getJson } from "@/lib/api";
 import type { TransactionRecord } from "@ethcannes/types";
+import { DecryptedText } from "@/components/ui/decrypted-text";
 
 export function TransactionHistory({ userId }: { userId: string }) {
   const [items, setItems] = useState<TransactionRecord[]>([]);
@@ -15,25 +16,39 @@ export function TransactionHistory({ userId }: { userId: string }) {
   }, [userId]);
 
   return (
-    <section className="glass-card rounded-2xl p-5">
-      <h2 className="text-lg font-bold text-white tracking-tight border-b border-border pb-3 mb-4">Recent transactions</h2>
-      {loading ? <p className="text-sm text-text-muted animate-pulse">Loading...</p> : null}
-      {!loading && items.length === 0 ? <p className="text-sm text-text-muted">No transactions yet.</p> : null}
+    <section className="w-full">
+      {loading ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase animate-pulse">LOADING...</p> : null}
+      {!loading && items.length === 0 ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase">NO TRANSACTIONS YET</p> : null}
       
-      <ul className="space-y-3">
+      <ul className="flex flex-col w-full">
         {items.map((tx) => {
           const isPublic = tx.mode === "PUBLIC";
           return (
-            <li key={tx.id} className="group relative flex items-center justify-between rounded-xl border border-white/5 bg-surface p-3 transition-colors hover:bg-surface-hover">
+            <li key={tx.id} className="flex flex-row items-center justify-between border-0 border-b-2 border-white/10 py-5 transition-colors hover:bg-white/5 px-2">
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${isPublic ? "bg-public shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-private shadow-[0_0_8px_rgba(139,92,246,0.5)]"}`}></span>
-                  <p className="font-semibold text-white">{tx.amount} {tx.tokenSymbol}</p>
+                <p className="text-2xl font-black text-white">{tx.amount} {tx.tokenSymbol}</p>
+                <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex flex-wrap items-center gap-2">
+                  {!isPublic ? (
+                    <>
+                      <span className="text-[#8b5cf6]">PRIVATE</span>  
+                      <DecryptedText 
+                        text={tx.note ?? "TRANSFER"} 
+                        animateOn="view" 
+                        speed={150} 
+                        sequential={true} 
+                        className="font-mono text-white/70"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[#10b981]">PUBLIC</span>
+                      <span className="text-white/70">{tx.note ?? "TRANSFER"}</span>
+                    </>
+                  )}
                 </div>
-                <p className="text-xs text-text-muted mt-1 ml-4">{tx.note ?? (isPublic ? "Public transfer" : "Private transfer")}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-1">{tx.status}</p>
+                <p className="text-xl font-bold uppercase tracking-wider text-white/50">{tx.status}</p>
               </div>
             </li>
           );

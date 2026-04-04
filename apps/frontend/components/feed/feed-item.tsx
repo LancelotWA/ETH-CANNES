@@ -12,48 +12,32 @@ export function FeedItemCard({ item }: FeedItemCardProps) {
   const timeAgo = formatTimeAgo(new Date(item.createdAt));
 
   return (
-    <article className="glass-card rounded-2xl p-5 group transition-transform hover:scale-[1.01]">
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-public/20 border border-public/30 text-public font-bold shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-          {(item.sender.displayName?.[0] ?? "?").toUpperCase()}
+    <article className="group flex flex-row items-center justify-between border-0 border-b-2 border-white/10 py-5 transition-colors hover:bg-white/5 px-2">
+      <div className="flex flex-col">
+        <p className="text-2xl font-black text-white">{Number(item.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {item.tokenSymbol ?? "USDC"}</p>
+        <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex items-center gap-2">
+          <span className="text-[#10b981]">PUBLIC</span>
+          <span className="text-white shrink-0">{item.sender.ensName ?? item.sender.displayName}</span>
+          <span className="opacity-50">→</span>
+          <span className="text-white shrink-0">{item.recipient.ensName ?? item.recipient.displayName}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-text-muted">
-            <span className="font-bold text-white">{item.sender.ensName ?? item.sender.displayName}</span>
-            {" paid "}
-            <span className="font-bold text-white">{item.recipient.ensName ?? item.recipient.displayName}</span>
-          </p>
-          <p className="mt-1 text-xs text-text-muted/60">{timeAgo}</p>
-          {item.note && (
-            <p className="mt-2 inline-block rounded-xl bg-surface border border-border px-3 py-1.5 text-sm text-text/90 italic">{item.note}</p>
-          )}
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-bold text-public drop-shadow-sm">
-            {Number(item.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs font-medium text-text-muted uppercase tracking-wider">{item.tokenSymbol ?? "USDC"}</p>
-        </div>
+        {item.note && (
+          <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">"{item.note}"</p>
+        )}
       </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-        {item.reactions.map((r) => (
-          <span
-            key={r.id}
-            className="rounded-full border border-border bg-surface px-2.5 py-1 text-sm shadow-sm"
-          >
-            {r.emoji}
-          </span>
-        ))}
-        {QUICK_REACTIONS.map((emoji) => (
-          <button
-            key={emoji}
-            className="rounded-full border border-border bg-transparent px-2.5 py-1 text-sm opacity-50 transition-all hover:opacity-100 hover:scale-110 hover:bg-surface"
-            title={`React with ${emoji}`}
-          >
-            {emoji}
-          </button>
-        ))}
+      
+      <div className="text-right flex flex-col items-end">
+        <p className="text-sm font-bold uppercase tracking-wider text-white/30 mb-2">{timeAgo}</p>
+        <div className="flex flex-wrap items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity justify-end">
+          {item.reactions.map((r) => (
+            <span key={r.id} className="text-2xl">{r.emoji}</span>
+          ))}
+          {QUICK_REACTIONS.map((emoji) => (
+            <button key={emoji} className="text-2xl grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-125 transition-all">
+              {emoji}
+            </button>
+          ))}
+        </div>
       </div>
     </article>
   );

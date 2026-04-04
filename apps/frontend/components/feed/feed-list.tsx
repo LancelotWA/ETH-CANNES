@@ -11,9 +11,9 @@ export function FeedList() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col w-full">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl glass-card bg-surface/50" />
+          <div key={i} className="h-24 animate-pulse border-b-2 border-white/10 bg-transparent" />
         ))}
       </div>
     );
@@ -23,9 +23,8 @@ export function FeedList() {
 
   if (feedItems.length === 0) {
     return (
-      <div className="glass-card rounded-2xl border-dashed py-16 text-center">
-        <p className="text-sm text-text font-medium mb-1">No public transactions yet.</p>
-        <p className="text-xs text-text-muted">Send a public payment to see it here!</p>
+      <div className="py-16 text-center">
+        <p className="text-sm font-bold tracking-widest text-white/30 uppercase">NO PUBLIC TRANSACTIONS YET</p>
       </div>
     );
   }

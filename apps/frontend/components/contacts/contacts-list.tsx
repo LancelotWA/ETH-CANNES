@@ -12,9 +12,9 @@ export function ContactsList({ userId }: ContactsListProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col w-full">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-2xl glass-card bg-surface/50" />
+          <div key={i} className="h-24 animate-pulse border-b-2 border-white/10 bg-transparent" />
         ))}
       </div>
     );
@@ -24,11 +24,8 @@ export function ContactsList({ userId }: ContactsListProps) {
 
   if (items.length === 0) {
     return (
-      <div className="glass-card rounded-2xl border-dashed py-16 text-center">
-        <p className="text-sm text-text font-medium mb-1">No contacts yet.</p>
-        <p className="mt-1 text-xs text-text-muted">
-          Contacts are added automatically when you send payments.
-        </p>
+      <div className="py-16 text-center">
+        <p className="text-sm font-bold tracking-widest text-white/30 uppercase">NO CONTACTS YET</p>
       </div>
     );
   }
@@ -37,11 +34,10 @@ export function ContactsList({ userId }: ContactsListProps) {
   const ghosts = items.filter((c) => c.isGhost);
 
   return (
-    <div className="space-y-8 mt-4">
+    <div className="w-full flex flex-col mt-4">
       {regular.length > 0 && (
-        <section>
-          <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-text-muted/80 pb-2 border-b border-border">Connections</h3>
-          <ul className="space-y-3">
+        <section className="mt-4">
+          <ul className="flex flex-col w-full">
             {regular.map((c) => (
               <ContactRow key={c.id} contact={c} />
             ))}
@@ -49,12 +45,8 @@ export function ContactsList({ userId }: ContactsListProps) {
         </section>
       )}
       {ghosts.length > 0 && (
-        <section>
-          <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-private/80 pb-2 border-b border-border">
-            Ghost contacts
-            <span className="ml-2 font-normal normal-case text-private-dim/80 hidden sm:inline">(private payments only)</span>
-          </h3>
-          <ul className="space-y-3">
+        <section className="mt-8">
+          <ul className="flex flex-col w-full">
             {ghosts.map((c) => (
               <ContactRow key={c.id} contact={c} />
             ))}
@@ -67,23 +59,27 @@ export function ContactsList({ userId }: ContactsListProps) {
 
 function ContactRow({ contact }: { contact: Contact }) {
   return (
-    <li className="flex items-center gap-4 rounded-xl border border-white/5 bg-surface p-4 shadow-sm transition-transform hover:scale-[1.01]">
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg shadow-[inset_0_2px_4px_rgba(255,255,255,0.1)] ${
-          contact.isGhost
-            ? "bg-private-dim text-private border border-private/20 shadow-[0_0_10px_rgba(139,92,246,0.15)]"
-            : "bg-public-dim text-public border border-public/20 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-        }`}
-      >
-        {contact.isGhost ? "👻" : (contact.alias[0] ?? "?").toUpperCase()}
+    <li className="flex flex-row items-center justify-between border-0 border-b-2 border-white/10 py-5 transition-colors hover:bg-white/5 px-2 group">
+      <div className="flex flex-col">
+        <p className="text-2xl font-black text-white uppercase">{contact.alias}</p>
+        <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex flex-wrap items-center gap-2">
+          {contact.isGhost ? (
+             <>
+               <span className="text-[#8b5cf6]">PRIVATE</span>
+               <span className="text-white/30 sm:inline hidden">GHOST CONNECTION</span>
+             </>
+          ) : (
+             <>
+               <span className="text-[#10b981]">PUBLIC</span>
+               <span className="text-white/30 sm:inline hidden">ON-CHAIN LINK</span>
+             </>
+          )}
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-base font-bold text-white tracking-wide">{contact.alias}</p>
-        {contact.isGhost ? (
-          <p className="text-xs font-medium text-private/80 mt-0.5">No on-chain link · Private connection</p>
-        ) : (
-          <p className="text-xs font-medium text-public/80 mt-0.5">Public connection</p>
-        )}
+      <div className="text-right flex items-center justify-end">
+        <div className="text-4xl font-black text-white/10 group-hover:text-white/50 transition-colors">
+          {contact.isGhost ? "👻" : (contact.alias[0] ?? "?").toUpperCase()}
+        </div>
       </div>
     </li>
   );

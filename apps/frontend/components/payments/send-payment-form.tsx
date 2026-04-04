@@ -47,45 +47,40 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
   }
 
   return (
-    <form className="glass-card space-y-5 rounded-2xl p-6" onSubmit={onSubmit}>
-      <h2 className="text-xl font-bold text-white tracking-tight border-b border-border pb-3">Send payment</h2>
+    <form className="space-y-3 flex flex-col" onSubmit={onSubmit}>
 
-      <fieldset className="flex gap-2 bg-surface p-1 rounded-xl border border-border">
+      <fieldset className="flex gap-4">
         {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => {
           const isActive = mode === m;
-          const isPublic = m === "PUBLIC";
           return (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
+              className={`flex-1 pb-1 border-b-2 font-black tracking-widest text-sm md:text-base uppercase transition-all duration-300 ${
                 isActive
-                  ? isPublic
-                    ? "bg-public/20 text-public shadow-[0_0_15px_rgba(16,185,129,0.3)] shadow-inner"
-                    : "bg-private/20 text-private shadow-[0_0_15px_rgba(139,92,246,0.3)] shadow-inner"
-                  : "text-text-muted hover:text-white"
+                  ? "border-white text-white"
+                  : "border-transparent text-white/30 hover:text-white/60"
               }`}
             >
-              {isPublic ? "🌐 Public" : "🔒 Private (UNILINK)"}
+              {m}
             </button>
           );
         })}
       </fieldset>
 
-      <div className={`transition-all duration-500 overflow-hidden ${mode === "PRIVATE" ? "max-h-24 opacity-100 mt-4" : "max-h-0 opacity-0 m-0"}`}>
-        <div className="rounded-xl bg-private/10 border border-private/20 px-4 py-3 text-xs text-private-dim font-medium flex items-start gap-2">
-          <span className="text-private mt-0.5">ℹ</span>
-          <p className="text-private/90 leading-relaxed">The recipient identity and your relationship will remain hidden on-chain. A ghost contact will be created in your contacts list.</p>
+      <div className={`transition-all duration-500 overflow-hidden ${mode === "PRIVATE" ? "max-h-24 opacity-100 mt-1" : "max-h-0 opacity-0 m-0"}`}>
+        <div className="border border-white/20 bg-black/40 px-4 py-2 text-xs text-white/70 font-medium">
+          <p>UNILINK stealth routing activated.</p>
         </div>
       </div>
 
       <div className={`transition-all duration-500 overflow-hidden ${mode === "PUBLIC" ? "max-h-24 opacity-100" : "max-h-0 opacity-0 m-0"}`}>
         {mode === "PUBLIC" && (
-          <label className="block text-sm font-medium text-text-muted mt-2">
-            Recipient ENS
+          <label className="block text-xs font-bold text-white/50 uppercase tracking-widest">
+            Recipient
             <input
-              className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-white placeholder-text-muted focus:border-public focus:outline-none focus:ring-1 focus:ring-public transition-all"
+              className="mt-0 w-full border-0 border-b-2 border-white/20 bg-transparent px-0 py-1 text-xl md:text-2xl font-black text-white focus:ring-0 focus:border-white transition-all placeholder-white/10"
               value={ensInput}
               onChange={(e) => setEnsInput(e.target.value)}
               placeholder="alice.eth"
@@ -95,12 +90,12 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
         )}
       </div>
 
-      <label className="block text-sm font-medium text-text-muted">
+      <label className="block text-xs font-bold text-white/50 uppercase tracking-widest">
         Amount (USDC)
-        <div className="relative mt-2">
-          <span className="absolute left-4 top-3 text-text-muted font-bold">$</span>
+        <div className="relative mt-0">
+          <span className="absolute left-0 top-1 text-white/50 font-black text-xl">$</span>
           <input
-            className="w-full rounded-xl border border-border bg-surface pl-8 pr-4 py-3 text-white placeholder-text-muted focus:border-white focus:outline-none focus:ring-1 focus:ring-white transition-all"
+            className="w-full border-0 border-b-2 border-white/20 bg-transparent pl-6 pr-0 py-1 text-2xl font-black text-white focus:ring-0 focus:border-white transition-all placeholder-white/10"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             type="number"
@@ -112,29 +107,29 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
         </div>
       </label>
 
-      <label className="block text-sm font-medium text-text-muted">
-        Note {mode === "PUBLIC" ? <span className="text-public/70 ml-1">(visible in feed)</span> : <span className="text-private/70 ml-1">(private, not shared)</span>}
+      <label className="block text-xs font-bold text-white/50 uppercase tracking-widest">
+        Note
         <input
-          className={`mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-white placeholder-border-hover focus:outline-none focus:ring-1 transition-all ${mode === "PUBLIC" ? "focus:border-public focus:ring-public" : "focus:border-private focus:ring-private"}`}
+          className="mt-0 w-full border-0 border-b-2 border-white/20 bg-transparent px-0 py-1 text-base md:text-lg font-black text-white focus:ring-0 focus:border-white transition-all placeholder-white/10"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={240}
-          placeholder={mode === "PUBLIC" ? "Coffee ☕" : "Optional private memo"}
+          placeholder="For dinner"
         />
       </label>
 
       <button 
         type="submit" 
         disabled={loading}
-        className={`w-full mt-4 rounded-xl py-3.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] ${
-          loading ? "opacity-50 cursor-not-allowed bg-surface" : mode === "PRIVATE" ? "bg-private hover:bg-private/90" : "bg-public hover:bg-public/90"
+        className={`w-full mt-2 rounded-[2rem] py-2 text-base font-black uppercase shadow-xl transition-all hover:scale-105 active:scale-95 ${
+          loading ? "opacity-50 cursor-not-allowed bg-white/20 text-white" : "bg-white text-black"
         }`}
       >
-        {loading ? "Resolving ENS..." : mode === "PRIVATE" ? "Send privately" : "Send public payment"}
+        {loading ? "PROCESSING..." : "CONFIRM"}
       </button>
 
-      {error ? <p className="text-sm text-danger mt-2 text-center bg-danger/10 py-2 rounded-lg border border-danger/20">{error}</p> : null}
-      {status ? <p className="text-sm text-public mt-2 text-center bg-public/10 py-2 rounded-lg border border-public/20">{status}</p> : null}
+      {error ? <p className="text-xs text-red-400 mt-2 text-center font-bold tracking-wider">{error}</p> : null}
+      {status ? <p className="text-xs text-green-400 mt-2 text-center font-bold tracking-wider">{status}</p> : null}
     </form>
   );
 }

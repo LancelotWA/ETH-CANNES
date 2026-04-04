@@ -45,98 +45,83 @@ export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
           light: '#00000000'
         }
       })
-      .then(url => setQrDataUrl(url))
-      .catch(err => console.error(err));
+        .then(url => setQrDataUrl(url))
+        .catch(err => console.error(err));
     }
   }, [qrUrl]);
 
   return (
-    <div className="glass-card space-y-5 rounded-2xl p-6">
-      <h2 className="text-xl font-bold text-white tracking-tight border-b border-border pb-3">Request money via QR</h2>
+    <div className="space-y-6 flex flex-col">
 
-      <fieldset className="flex gap-2 bg-surface p-1 rounded-xl border border-border">
+      <fieldset className="flex gap-4">
         {(["ONE_TIME", "PERMANENT"] as QrCodeType[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setType(t)}
-            className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
-              type === t
-                ? "bg-white/10 text-white shadow-inner"
-                : "text-text-muted hover:text-white"
-            }`}
+            className={`flex-1 pb-2 border-b-2 font-black tracking-widest text-base uppercase transition-all duration-300 ${type === t ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/60"}`}
           >
-            {t === "ONE_TIME" ? "One-time use" : "Reusable"}
+            {t === "ONE_TIME" ? "ONE-TIME" : "REUSABLE"}
           </button>
         ))}
       </fieldset>
 
-      <fieldset className="flex gap-2 bg-surface p-1 rounded-xl border border-border">
+      <fieldset className="flex gap-4">
         {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => {
           const isActive = mode === m;
-          const isPublic = m === "PUBLIC";
           return (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
-                isActive
-                  ? isPublic
-                    ? "bg-public/20 text-public shadow-[0_0_15px_rgba(16,185,129,0.3)] shadow-inner"
-                    : "bg-private/20 text-private shadow-[0_0_15px_rgba(139,92,246,0.3)] shadow-inner"
-                  : "text-text-muted hover:text-white"
-              }`}
+              className={`flex-1 pb-2 border-b-2 font-black tracking-widest text-base uppercase transition-all duration-300 ${isActive ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/60"}`}
             >
-              {isPublic ? "🌐 Public" : "🔒 Private"}
+              {m}
             </button>
           );
         })}
       </fieldset>
 
-      <label className="block text-sm font-medium text-text-muted">
-        Amount (optional – leave empty for open amount)
-        <div className="relative mt-2">
-          <span className="absolute left-4 top-3 text-text-muted font-bold">$</span>
+      <label className="block text-sm font-bold text-white/50 uppercase tracking-widest">
+        AMOUNT (OPTIONAL)
+        <div className="relative mt-1">
+          <span className="absolute left-0 top-2 text-white/50 font-black text-2xl">$</span>
           <input
-            className="w-full rounded-xl border border-border bg-surface pl-8 pr-4 py-3 text-white placeholder-text-muted focus:border-white focus:outline-none focus:ring-1 focus:ring-white transition-all"
+            className="w-full border-0 border-b-2 border-white/20 bg-transparent pl-8 pr-0 py-2 text-3xl leading-none font-black text-white focus:ring-0 focus:border-white transition-all placeholder-white/10"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             type="number"
             min="0"
             step="0.01"
-            placeholder="Open amount"
+            placeholder="OPEN"
           />
         </div>
       </label>
 
-      <button 
-        type="button" 
-        onClick={generate} 
+      <button
+        type="button"
+        onClick={generate}
         disabled={loading}
-        className={`w-full mt-4 rounded-xl py-3.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] ${
-          loading ? "opacity-50 cursor-not-allowed bg-surface" : mode === "PRIVATE" ? "bg-private hover:bg-private/90" : "bg-public hover:bg-public/90"
-        }`}
+        className={`w-full mt-6 rounded-[2rem] py-4 text-xl font-black uppercase shadow-2xl transition-all hover:scale-105 active:scale-95 ${loading ? "opacity-50 cursor-not-allowed bg-white/20 text-white" : "bg-white text-black"}`}
       >
-        {loading ? "Generating..." : "Generate QR code"}
+        {loading ? "GENERATING..." : "GENERATE QR"}
       </button>
 
       {qr && qrUrl && qrDataUrl && (
-        <div className="mt-6 rounded-2xl border border-white/10 bg-surface/80 p-6 flex flex-col items-center">
-          <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/50">Scan to Pay</p>
-          
-          <div className="mb-5 rounded-xl bg-surface shadow-[0_0_20px_rgba(255,255,255,0.05)] p-4 border border-white/5">
-            <img src={qrDataUrl} alt="Payment QR Code" className="w-48 h-48" />
+        <div className="mt-8 text-center animate-in fade-in zoom-in duration-500">
+          <p className="mb-4 text-xs font-black uppercase tracking-widest text-[#10b981]">SCAN TO PAY</p>
+
+          <div className="inline-block bg-white p-3 border-4 border-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+            <img src={qrDataUrl} alt="Payment QR Code" className="w-[120px] h-[120px] object-contain" />
           </div>
 
-          <p className="mb-4 text-xs font-semibold text-white/80">
-            {qr.type === "ONE_TIME" ? "Single-use" : "Reusable"} ·{" "}
-            {qr.mode === "PRIVATE" ? <span className="text-private">Private</span> : <span className="text-public">Public</span>}
-            {qr.amount ? ` · ${Number(qr.amount)} USDC` : " · Open amount"}
+          <p className="mt-4 mb-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
+            {qr.type} · {qr.mode}
+            {qr.amount ? ` · ${Number(qr.amount)} USDC` : " · OPEN"}
           </p>
 
           <input
-            className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs font-mono text-text-muted text-center focus:outline-none"
+            className="w-full border-0 border-b-2 border-white/20 bg-transparent px-0 py-2 text-sm font-mono text-white text-center focus:outline-none"
             readOnly
             value={qrUrl}
             onClick={(e) => (e.target as HTMLInputElement).select()}
