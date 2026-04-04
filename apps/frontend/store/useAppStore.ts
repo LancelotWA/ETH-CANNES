@@ -1,11 +1,12 @@
 import { create } from "zustand";
 
 interface AppState {
-  activeUserId: string | null;
-  setActiveUserId: (userId: string) => void;
+  // UI state only — wallet address comes from wagmi useAccount()
+  lastScannedBlock: bigint;
+  setLastScannedBlock: (block: bigint) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  activeUserId: null,
-  setActiveUserId: (activeUserId) => set({ activeUserId })
+  lastScannedBlock: 0n,
+  setLastScannedBlock: (lastScannedBlock) => set({ lastScannedBlock })
 }));

@@ -39,3 +39,6 @@ apps/backend/node_modules/.prisma/
 # Misc
 tmp/
 .cache/
+
+lancelot.js
+lancelot2.js

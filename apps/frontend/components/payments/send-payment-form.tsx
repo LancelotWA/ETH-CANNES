@@ -2,50 +2,69 @@
 
 import React, { FormEvent, useState } from "react";
 
-import { useEnsResolution } from "@/hooks/useEnsResolution";
-import { postJson } from "@/lib/api";
-import type { PaymentMode } from "@ethcannes/types";
+import { resolveEns } from "@/lib/public/ens";
+import { sendPublicPayment } from "@/lib/public/transactions";
+import { shortenAddress } from "@/lib/public/helpers";
 import { Button } from "@ethcannes/ui";
+import type { WalletAddress } from "@ethcannes/types";
+
+type PaymentMode = "PUBLIC" | "PRIVATE";
 
 interface SendPaymentFormProps {
-  senderUserId: string;
+  senderAddress: WalletAddress;
 }
 
-export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
+export function SendPaymentForm({ senderAddress }: SendPaymentFormProps) {
   const [ensInput, setEnsInput] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<PaymentMode>("PUBLIC");
   const [status, setStatus] = useState<string | null>(null);
-  const { resolveEns, loading, error } = useEnsResolution();
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setStatus(null);
+    setLoading(true);
 
-    let recipientUserId: string | undefined;
+    try {
+      if (mode === "PUBLIC") {
+        // Resolve ENS or use raw address
+        let recipientAddress: WalletAddress;
+        if (ensInput.endsWith(".eth")) {
+          const resolved = await resolveEns(ensInput);
+          if (!resolved) {
+            setStatus("Recipient ENS not found");
+            return;
+          }
+          recipientAddress = resolved;
+        } else if (ensInput.startsWith("0x") && ensInput.length === 42) {
+          recipientAddress = ensInput as WalletAddress;
+        } else {
+          setStatus("Invalid address or ENS name");
+          return;
+        }
 
-    if (mode === "PUBLIC") {
-      const resolution = await resolveEns(ensInput);
-      if (!resolution?.address) {
-        setStatus("Recipient ENS not found");
+        const { txHash } = await sendPublicPayment({
+          to: recipientAddress,
+          amount,
+          note: note || undefined,
+        });
+
+        setStatus(`Sent! Tx: ${shortenAddress(txHash)}`);
+        setAmount("");
+        setNote("");
+        setEnsInput("");
         return;
       }
-      // In a real app, look up the user ID by wallet address
-      recipientUserId = resolution.address;
+
+      // Phase 3: wire Unlink SDK here
+      setStatus("Private payment via Unlink — wired in Phase 3");
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Transaction failed");
+    } finally {
+      setLoading(false);
     }
-
-    await postJson("/payments", {
-      senderUserId,
-      recipientUserId,
-      amount: Number(amount),
-      tokenSymbol: "USDC",
-      mode,
-      note: note || undefined
-    });
-
-    const label = mode === "PRIVATE" ? "Private payment sent via UNILINK" : `Payment queued for ${ensInput}`;
-    setStatus(label);
   }
 
   return (
@@ -54,8 +73,8 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
       onSubmit={onSubmit}
     >
       <h2 className="text-lg font-semibold">Send payment</h2>
+      <p className="font-mono text-xs text-zinc-400">{senderAddress}</p>
 
-      {/* Mode toggle */}
       <fieldset className="flex gap-2">
         <legend className="mb-1 block text-sm font-medium">Payment mode</legend>
         {(["PUBLIC", "PRIVATE"] as PaymentMode[]).map((m) => (
@@ -69,29 +88,28 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
                 ? m === "PRIVATE"
                   ? "border-violet-500 bg-violet-50 text-violet-700"
                   : "border-emerald-500 bg-emerald-50 text-emerald-700"
-                : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
+                : "border-zinc-200 text-zinc-500 hover:border-zinc-400",
             ].join(" ")}
           >
-            {m === "PUBLIC" ? "🌐 Public" : "🔒 Private (UNILINK)"}
+            {m === "PUBLIC" ? "Public" : "Private (Unlink)"}
           </button>
         ))}
       </fieldset>
 
       {mode === "PRIVATE" && (
         <p className="rounded-xl bg-violet-50 px-3 py-2 text-xs text-violet-700">
-          The recipient identity and your relationship will remain hidden on-chain.
-          A ghost contact will be created in your contacts list.
+          Sender and recipient are hidden on-chain via Unlink ZK proofs.
         </p>
       )}
 
       {mode === "PUBLIC" && (
         <label className="block text-sm">
-          Recipient ENS
+          Recipient ENS or address
           <input
             className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2"
             value={ensInput}
             onChange={(e) => setEnsInput(e.target.value)}
-            placeholder="alice.eth"
+            placeholder="alice.eth or 0x..."
             required
           />
         </label>
@@ -111,23 +129,32 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
         />
       </label>
 
-      <label className="block text-sm">
-        Note {mode === "PUBLIC" ? "(visible in feed)" : "(private, not shared)"}
-        <input
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          maxLength={240}
-          placeholder={mode === "PUBLIC" ? "Coffee ☕" : "Optional private memo"}
-        />
-      </label>
+      {mode === "PUBLIC" && (
+        <label className="block text-sm">
+          Note (visible in feed)
+          <input
+            className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={240}
+            placeholder="Coffee ☕"
+          />
+        </label>
+      )}
 
       <Button type="submit" disabled={loading}>
-        {loading ? "Resolving ENS..." : mode === "PRIVATE" ? "Send privately" : "Send"}
+        {loading ? "Sending..." : mode === "PRIVATE" ? "Send privately" : "Send"}
       </Button>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      {status ? <p className="text-sm text-emerald-700">{status}</p> : null}
+      {status && (
+        <p
+          className={`text-sm ${
+            status.startsWith("Sent") ? "text-emerald-700" : "text-red-600"
+          }`}
+        >
+          {status}
+        </p>
+      )}
     </form>
   );
 }

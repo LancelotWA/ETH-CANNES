@@ -17,5 +17,9 @@
   "engines": {
     "node": ">=20.11.0",
     "npm": ">=10.2.4"
+  },
+  "dependencies": {
+    "@unlink-xyz/sdk": "^0.0.2-canary.0",
+    "viem": "^2.47.10"
   }
 }
