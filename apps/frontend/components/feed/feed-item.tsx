@@ -1,102 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
-
-import { sendReaction } from "@/lib/public/reactions";
-import { shortenAddress, formatUSDC } from "@/lib/public/helpers";
-import type { WalletAddress, HexHash } from "@ethcannes/types";
-import type { EnrichedFeedItem } from "./feed-list";
+import type { FeedItem } from "@ethcannes/types";
 
 interface FeedItemCardProps {
-  item: EnrichedFeedItem;
+  item: FeedItem;
 }
 
 const QUICK_REACTIONS = ["❤️", "🎉", "🔥", "👏", "😂"];
 
 export function FeedItemCard({ item }: FeedItemCardProps) {
-  const { address } = useAccount();
-  const [reacting, setReacting] = useState<string | null>(null);
-  const [reactedEmojis, setReactedEmojis] = useState<string[]>([]);
-
-  const senderLabel = item.fromEns ?? shortenAddress(item.from);
-  const recipientLabel = item.toEns ?? shortenAddress(item.to);
-  const timeAgo = formatTimeAgo(new Date(item.timestamp));
-
-  async function handleReaction(emoji: string) {
-    if (!address || reacting) return;
-
-    setReacting(emoji);
-    try {
-      await sendReaction({
-        to: item.from as WalletAddress,
-        emoji,
-        targetTxHash: item.txHash as HexHash,
-      });
-      setReactedEmojis((prev) => [...prev, emoji]);
-    } catch {
-      // Reaction tx failed — user likely rejected
-    } finally {
-      setReacting(null);
-    }
-  }
+  const timeAgo = formatTimeAgo(new Date(item.createdAt));
 
   return (
-    <article className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-          {senderLabel[0].toUpperCase()}
+    <article className="group flex flex-row items-center justify-between border-0 border-b-2 border-white/10 py-5 transition-colors hover:bg-white/5 px-2">
+      <div className="flex flex-col">
+        <p className="text-2xl font-black text-white">{Number(item.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {item.tokenSymbol ?? "USDC"}</p>
+        <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex items-center gap-2">
+          <span className="text-[#10b981]">PUBLIC</span>
+          <span className="text-white shrink-0">{item.sender.ensName ?? item.sender.displayName}</span>
+          <span className="opacity-50">→</span>
+          <span className="text-white shrink-0">{item.recipient.ensName ?? item.recipient.displayName}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800">
-            <span className="font-semibold">{senderLabel}</span>
-            {" → "}
-            <span className="font-semibold">{recipientLabel}</span>
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-500">{timeAgo}</p>
-          {item.note && (
-            <p className="mt-1 rounded-xl bg-zinc-50 px-3 py-1.5 text-sm text-zinc-700">
-              {item.note}
-            </p>
-          )}
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="text-base font-bold text-zinc-900">
-            {formatUSDC(item.amount)}
-          </p>
-          <p className="text-xs text-zinc-500">USDC</p>
-        </div>
+        {item.note && (
+          <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">"{item.note}"</p>
+        )}
       </div>
 
-      {/* Reactions */}
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        {reactedEmojis.map((emoji, i) => (
-          <span
-            key={`${emoji}-${i}`}
-            className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm"
-          >
-            {emoji}
-          </span>
-        ))}
-        {QUICK_REACTIONS.map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => handleReaction(emoji)}
-            disabled={reacting !== null || !address}
-            className={`rounded-full border border-zinc-100 bg-white px-2 py-0.5 text-sm transition-opacity ${
-              reacting === emoji
-                ? "animate-pulse opacity-100"
-                : "opacity-50 hover:opacity-100"
-            } disabled:cursor-not-allowed`}
-            title={
-              !address
-                ? "Connect wallet to react"
-                : `React with ${emoji} (0.01 USDC)`
-            }
-          >
-            {emoji}
-          </button>
-        ))}
+      <div className="text-right flex flex-col items-end">
+        <p className="text-sm font-bold uppercase tracking-wider text-white/30 mb-2">{timeAgo}</p>
+        <div className="flex flex-wrap items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity justify-end">
+          {item.reactions.map((r) => (
+            <span key={r.id} className="text-2xl">{r.emoji}</span>
+          ))}
+          {QUICK_REACTIONS.map((emoji) => (
+            <button key={emoji} className="text-2xl grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-125 transition-all">
+              {emoji}
+            </button>
+          ))}
+        </div>
       </div>
     </article>
   );

@@ -19,7 +19,13 @@
     "npm": ">=10.2.4"
   },
   "dependencies": {
+    "@types/qrcode": "^1.5.6",
     "@unlink-xyz/sdk": "^0.0.2-canary.0",
-    "viem": "^2.47.10"
+    "@walletconnect/modal": "^2.7.0",
+    "qrcode": "^1.5.4",
+    "tailwind": "^4.0.0",
+    "viem": "^2.47.10",
+    "wagmi": "^3.6.0",
+    "zustand": "^5.0.12"
   }
 }

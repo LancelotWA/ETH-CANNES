@@ -1,97 +1,63 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-
-import { getPublicHistory } from "@/lib/public/transactions";
-import { shortenAddress, formatUSDC } from "@/lib/public/helpers";
-import type { PublicTransferRecord, WalletAddress } from "@ethcannes/types";
+import { useEffect, useState } from "react";
+import { getJson } from "@/lib/api";
+import type { TransactionRecord } from "@ethcannes/types";
+import { DecryptedText } from "@/components/ui/decrypted-text";
 
 interface TransactionHistoryProps {
-  address: WalletAddress;
+  userId: string;
 }
 
-export function TransactionHistory({ address }: TransactionHistoryProps) {
-  const [txs, setTxs] = useState<PublicTransferRecord[]>([]);
+export function TransactionHistory({ userId }: TransactionHistoryProps) {
+  const [items, setItems] = useState<TransactionRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const history = await getPublicHistory(address);
-      setTxs(history);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load history");
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    getJson<TransactionRecord[]>(`/transactions/user/${userId}`)
+      .then(setItems)
+      .finally(() => setLoading(false));
+  }, [userId]);
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 shadow-sm">
-      <h2 className="text-lg font-semibold">Recent transactions</h2>
-      <p className="mt-1 text-xs font-mono text-zinc-400">{shortenAddress(address)}</p>
+    <section className="w-full">
+      {loading ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase animate-pulse">LOADING...</p> : null}
+      {!loading && items.length === 0 ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase">NO TRANSACTIONS YET</p> : null}
 
-      {loading && (
-        <div className="mt-4 space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded-xl bg-zinc-100" />
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <p className="mt-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {!loading && !error && txs.length === 0 && (
-        <p className="mt-4 text-sm text-zinc-500">No transactions found.</p>
-      )}
-
-      {!loading && !error && txs.length > 0 && (
-        <ul className="mt-4 divide-y divide-zinc-100">
-          {txs.map((tx) => {
-            const isSent = tx.from.toLowerCase() === address.toLowerCase();
-            return (
-              <li key={tx.txHash} className="flex items-center justify-between py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-800">
-                    {isSent ? (
-                      <>
-                        <span className="text-red-600">Sent</span> to{" "}
-                        <span className="font-mono text-xs">{shortenAddress(tx.to)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-emerald-600">Received</span> from{" "}
-                        <span className="font-mono text-xs">{shortenAddress(tx.from)}</span>
-                      </>
-                    )}
-                  </p>
-                  {tx.note && (
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">{tx.note}</p>
+      <ul className="flex flex-col w-full">
+        {items.map((tx) => {
+          const isPublic = tx.mode === "PUBLIC";
+          return (
+            <li key={tx.id} className="flex flex-row items-center justify-between border-0 border-b-2 border-white/10 py-5 transition-colors hover:bg-white/5 px-2">
+              <div className="flex flex-col">
+                <p className="text-2xl font-black text-white">{tx.amount} {tx.tokenSymbol}</p>
+                <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex flex-wrap items-center gap-2">
+                  {!isPublic ? (
+                    <>
+                      <span className="text-[#8b5cf6]">PRIVATE</span>
+                      <DecryptedText
+                        text={tx.note ?? "TRANSFER"}
+                        animateOn="view"
+                        speed={150}
+                        sequential={true}
+                        className="font-mono text-white/70"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[#10b981]">PUBLIC</span>
+                      <span className="text-white/70">{tx.note ?? "TRANSFER"}</span>
+                    </>
                   )}
-                  <p className="mt-0.5 text-xs text-zinc-400">
-                    {new Date(tx.timestamp).toLocaleDateString()}
-                  </p>
                 </div>
-                <p
-                  className={`shrink-0 text-sm font-semibold ${
-                    isSent ? "text-red-600" : "text-emerald-600"
-                  }`}
-                >
-                  {isSent ? "-" : "+"}{formatUSDC(tx.amount)} USDC
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold uppercase tracking-wider text-white/50">{tx.status}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
