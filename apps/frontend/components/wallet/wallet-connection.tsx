@@ -1,15 +1,13 @@
 "use client";
 
 import { useAccount, useDisconnect, useBalance, useConnect } from "wagmi";
-import { walletConnect } from "wagmi/connectors";
-import { projectId } from "@/lib/wagmi";
 import { useState, useEffect } from "react";
 
 export function WalletConnection() {
   const [mounted, setMounted] = useState(false);
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { connect, isPending } = useConnect();
+  const { connect, connectors, isPending } = useConnect();
 
   const { data: balanceData } = useBalance({ address });
 
@@ -46,9 +44,10 @@ export function WalletConnection() {
   }
 
   const handleConnect = () => {
-    connect({
-      connector: walletConnect({ projectId, showQrModal: true }),
-    });
+    const wc = connectors.find((c) => c.id === "walletConnect");
+    if (wc) {
+      connect({ connector: wc });
+    }
   };
 
   return (

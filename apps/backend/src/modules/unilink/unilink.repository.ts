@@ -1,41 +1,32 @@
 import { Injectable } from "@nestjs/common";
 
-import { PrismaService } from "@/prisma/prisma.service";
+interface UnlinkUserData {
+  mnemonic: string;
+  address: string;
+}
 
 @Injectable()
 export class UnilinkRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly store = new Map<string, UnlinkUserData>();
 
-  setUnlinkAccount(
-    userId: string,
-    mnemonic: string,
-    address: string,
-  ) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { unlinkMnemonic: mnemonic, unlinkAddress: address },
-    });
+  setUnlinkAccount(userId: string, mnemonic: string, address: string) {
+    this.store.set(userId, { mnemonic, address });
   }
 
-  async getUnlinkMnemonic(userId: string): Promise<string | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { unlinkMnemonic: true },
-    });
-    return user?.unlinkMnemonic ?? null;
+  getUnlinkMnemonic(userId: string): string | null {
+    return this.store.get(userId)?.mnemonic ?? null;
   }
 
-  async getUnlinkAddress(userId: string): Promise<string | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { unlinkAddress: true },
-    });
-    return user?.unlinkAddress ?? null;
+  getUnlinkAddress(userId: string): string | null {
+    return this.store.get(userId)?.address ?? null;
   }
 
   findUserByUnlinkAddress(address: string) {
-    return this.prisma.user.findUnique({
-      where: { unlinkAddress: address },
-    });
+    for (const [userId, data] of this.store) {
+      if (data.address === address) {
+        return { id: userId, unlinkAddress: data.address };
+      }
+    }
+    return null;
   }
 }
