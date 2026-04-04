@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import "./globals.css";
+
 import { AppProviders } from "@/components/providers/app-providers";
+import "./globals.css";
 import { AppDock } from "@/components/ui/app-dock";
 import { WalletGuard } from "@/components/wallet/wallet-guard";
 import { GlobalModeSwitch } from "@/components/ui/global-mode-switch";

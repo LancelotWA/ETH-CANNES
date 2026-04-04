@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { useApiMutation } from "@/hooks/useApi";
-import type { PaymentLinkRecord, PaymentMode } from "@ethcannes/types";
+import type { PaymentLinkRecord } from "@ethcannes/types";
 import { useAppStore } from "@/store/useAppStore";
 
 interface PaymentLinkGeneratorProps {
-  ownerId: string;
+  ownerId: string | null;
 }
 
 export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
   const [alias, setAlias] = useState("");
   const [amount, setAmount] = useState("");
   const [link, setLink] = useState<PaymentLinkRecord | null>(null);
-  
+
   const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   const { mutateAsync: generateLink, isPending: loading, error } = useApiMutation<PaymentLinkRecord>("POST", "/payment-links");
@@ -75,9 +75,9 @@ export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
         </div>
       </label>
 
-      <button 
-        type="button" 
-        onClick={generate} 
+      <button
+        type="button"
+        onClick={generate}
         disabled={loading || !alias}
         className={`w-full mt-6 rounded-[2rem] py-4 text-xl font-black uppercase shadow-2xl transition-all hover:scale-105 active:scale-95 ${
           loading || !alias ? "opacity-50 cursor-not-allowed bg-white/20 text-white" : "bg-white text-black"
@@ -98,7 +98,7 @@ export function PaymentLinkGenerator({ ownerId }: PaymentLinkGeneratorProps) {
               value={payUrl}
               onClick={(e) => (e.target as HTMLInputElement).select()}
             />
-            <button 
+            <button
               onClick={copyToClipboard}
               className="px-4 text-sm bg-white text-black font-black hover:scale-105 active:scale-95 transition-transform"
             >

@@ -16,7 +16,7 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const { resolveEns, loading, error } = useEnsResolution();
-  
+
   const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   async function onSubmit(event: FormEvent) {
@@ -26,12 +26,12 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
     let recipientUserId: string | undefined;
 
     if (globalMode === "PUBLIC") {
-      const resolution = await resolveEns(ensInput);
-      if (!resolution?.address) {
+      const address = await resolveEns(ensInput);
+      if (!address) {
         setStatus("Recipient ENS not found");
         return;
       }
-      recipientUserId = resolution.address;
+      recipientUserId = address;
     }
 
     await postJson("/payments", {
@@ -99,8 +99,8 @@ export function SendPaymentForm({ senderUserId }: SendPaymentFormProps) {
         />
       </label>
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={loading}
         className={`w-full mt-2 rounded-[2rem] py-2 text-base font-black uppercase shadow-xl transition-all hover:scale-105 active:scale-95 border border-white/20 ${
           loading ? "opacity-50 cursor-not-allowed bg-black/20 text-white" : "bg-white text-black"

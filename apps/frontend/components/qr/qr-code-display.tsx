@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { useApiMutation } from "@/hooks/useApi";
-import type { PaymentMode, QrCodeRecord, QrCodeType } from "@ethcannes/types";
+import type { QrCodeRecord, QrCodeType } from "@ethcannes/types";
 import { useAppStore } from "@/store/useAppStore";
 
 interface QrCodeDisplayProps {
-  ownerId: string;
+  ownerId: string | null;
 }
 
 export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
@@ -15,7 +15,7 @@ export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
   const [amount, setAmount] = useState("");
   const [qr, setQr] = useState<QrCodeRecord | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  
+
   const globalMode = useAppStore((state) => state.globalPaymentMode);
 
   const { mutateAsync: generateQr, isPending: loading } = useApiMutation<QrCodeRecord>("POST", "/qr-codes");
@@ -35,17 +35,14 @@ export function QrCodeDisplay({ ownerId }: QrCodeDisplayProps) {
     }
   }
 
-  const qrUrl = qr ? `${window.location.origin}/pay/qr/${qr.id}` : null;
+  const qrUrl = qr ? `${typeof window !== "undefined" ? window.location.origin : ""}/pay/qr/${qr.id}` : null;
 
   useEffect(() => {
     if (qrUrl) {
       QRCode.toDataURL(qrUrl, {
         width: 300,
         margin: 2,
-        color: {
-          dark: '#ffffff',
-          light: '#00000000'
-        }
+        color: { dark: '#ffffff', light: '#00000000' }
       })
         .then(url => setQrDataUrl(url))
         .catch(err => console.error(err));

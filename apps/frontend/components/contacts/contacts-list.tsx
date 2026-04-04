@@ -4,7 +4,7 @@ import { useApiQuery } from "@/hooks/useApi";
 import type { Contact } from "@ethcannes/types";
 
 interface ContactsListProps {
-  userId: string;
+  userId: string | null;
 }
 
 export function ContactsList({ userId }: ContactsListProps) {
@@ -64,15 +64,15 @@ function ContactRow({ contact }: { contact: Contact }) {
         <p className="text-2xl font-black text-white uppercase">{contact.alias}</p>
         <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex flex-wrap items-center gap-2">
           {contact.isGhost ? (
-             <>
-               <span className="text-[#8b5cf6]">PRIVATE</span>
-               <span className="text-white/30 sm:inline hidden">GHOST CONNECTION</span>
-             </>
+            <>
+              <span className="text-[#8b5cf6]">PRIVATE</span>
+              <span className="text-white/30 sm:inline hidden">GHOST CONNECTION</span>
+            </>
           ) : (
-             <>
-               <span className="text-[#10b981]">PUBLIC</span>
-               <span className="text-white/30 sm:inline hidden">ON-CHAIN LINK</span>
-             </>
+            <>
+              <span className="text-[#10b981]">PUBLIC</span>
+              <span className="text-white/30 sm:inline hidden">ON-CHAIN LINK</span>
+            </>
           )}
         </div>
       </div>

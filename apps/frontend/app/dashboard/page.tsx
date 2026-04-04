@@ -8,11 +8,11 @@ import { DecryptedText } from "@/components/ui/decrypted-text";
 import { TransitionLink } from "@/components/ui/transition-link";
 
 export default function DashboardPage() {
-  const activeUserId = useAppStore((state) => state.activeUserId) ?? "de305d54-75b4-431b-adb2-eb6b9e546014";
+  const activeUserId = useAppStore((state) => state.activeUserId);
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col justify-between items-center py-8 px-4 relative z-10">
-      
+
       {/* Top */}
       <div className="w-full flex flex-col items-center gap-6 mt-4">
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter drop-shadow-2xl">
@@ -33,6 +33,11 @@ export default function DashboardPage() {
         </TransitionLink>
       </div>
 
+      {activeUserId && (
+        <Suspense fallback={null}>
+          <TransactionHistory userId={activeUserId} />
+        </Suspense>
+      )}
     </div>
   );
 }

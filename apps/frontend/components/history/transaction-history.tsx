@@ -5,7 +5,11 @@ import { getJson } from "@/lib/api";
 import type { TransactionRecord } from "@ethcannes/types";
 import { DecryptedText } from "@/components/ui/decrypted-text";
 
-export function TransactionHistory({ userId }: { userId: string }) {
+interface TransactionHistoryProps {
+  userId: string;
+}
+
+export function TransactionHistory({ userId }: TransactionHistoryProps) {
   const [items, setItems] = useState<TransactionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +23,7 @@ export function TransactionHistory({ userId }: { userId: string }) {
     <section className="w-full">
       {loading ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase animate-pulse">LOADING...</p> : null}
       {!loading && items.length === 0 ? <p className="text-sm font-bold tracking-widest text-white/30 uppercase">NO TRANSACTIONS YET</p> : null}
-      
+
       <ul className="flex flex-col w-full">
         {items.map((tx) => {
           const isPublic = tx.mode === "PUBLIC";
@@ -30,12 +34,12 @@ export function TransactionHistory({ userId }: { userId: string }) {
                 <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex flex-wrap items-center gap-2">
                   {!isPublic ? (
                     <>
-                      <span className="text-[#8b5cf6]">PRIVATE</span>  
-                      <DecryptedText 
-                        text={tx.note ?? "TRANSFER"} 
-                        animateOn="view" 
-                        speed={150} 
-                        sequential={true} 
+                      <span className="text-[#8b5cf6]">PRIVATE</span>
+                      <DecryptedText
+                        text={tx.note ?? "TRANSFER"}
+                        animateOn="view"
+                        speed={150}
+                        sequential={true}
                         className="font-mono text-white/70"
                       />
                     </>

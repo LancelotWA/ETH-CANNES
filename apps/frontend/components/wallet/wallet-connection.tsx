@@ -10,7 +10,7 @@ export function WalletConnection() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect, isPending } = useConnect();
-  
+
   const { data: balanceData } = useBalance({ address });
 
   useEffect(() => {

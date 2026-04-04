@@ -1,66 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-
+import { useState, useEffect } from "react";
+import { useAppStore } from "@/store/useAppStore";
 import { getJson, postJson } from "@/lib/api";
 import type { PaymentLinkRecord } from "@ethcannes/types";
-import { Button } from "@ethcannes/ui";
-import { useAppStore } from "@/store/useAppStore";
 
 function PayPage() {
   const { alias } = useParams<{ alias: string }>();
-  const senderUserId = useAppStore((state) => state.activeUserId) ?? "";
-
   const [link, setLink] = useState<PaymentLinkRecord | null>(null);
   const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
+
+  const senderUserId = useAppStore((state) => state.activeUserId);
 
   useEffect(() => {
-    if (!alias) return;
-    getJson<PaymentLinkRecord>(`/payment-links/${alias}`)
-      .then((l) => {
-        setLink(l);
-        if (l.amount) setAmount(String(l.amount));
-      })
-      .catch(() => setError("Payment link not found"))
-      .finally(() => setLoading(false));
+    if (alias) {
+      getJson<PaymentLinkRecord>(`/payment-links/alias/${alias}`)
+        .then(setLink)
+        .catch(console.error);
+    }
   }, [alias]);
 
+  if (!link) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-white/40 font-bold uppercase tracking-widest animate-pulse">LOADING...</p>
+      </div>
+    );
+  }
+
   async function pay() {
-    if (!link || !senderUserId) return;
+    if (!link) return;
     setPaying(true);
     try {
       await postJson("/payments", {
         senderUserId,
-        recipientUserId: link.ownerId,
-        amount: Number(amount),
+        paymentLinkId: link.id,
+        amount: amount ? Number(amount) : Number(link.amount),
         tokenSymbol: link.tokenSymbol,
-        mode: link.mode
+        mode: link.mode,
       });
-      setStatus(`Payment of ${amount} ${link.tokenSymbol} sent!`);
-    } catch {
-      setError("Payment failed, please try again");
+      setStatus(`Payment of ${amount || link.amount} ${link.tokenSymbol} sent!`);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Payment failed");
     } finally {
       setPaying(false);
     }
   }
 
-  if (loading) {
-    return <div className="text-center py-12 text-zinc-400">Loading payment link…</div>;
-  }
-
-  if (error || !link) {
-    return <div className="text-center py-12 text-red-500">{error ?? "Link not found"}</div>;
-  }
-
   return (
     <div className="glass-card mx-auto max-w-sm space-y-6 rounded-3xl p-8 relative overflow-hidden group">
       <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-public/20 to-transparent blur-[100px] pointer-events-none"></div>
-      
+
       <div className="text-center relative">
         <p className="text-xs font-bold uppercase tracking-widest text-text-muted/80 mb-2">Checkout</p>
         <p className="text-3xl font-extrabold text-white tracking-tight">/{alias}</p>
@@ -102,17 +95,17 @@ function PayPage() {
           <p className="text-xs text-white/80 mt-1">{status}</p>
         </div>
       ) : (
-        <button 
-          type="button" 
-          onClick={pay} 
-          disabled={paying || !amount || !senderUserId}
+        <button
+          type="button"
+          onClick={pay}
+          disabled={paying || (!amount && !link.amount) || !senderUserId}
           className={`w-full rounded-xl py-4 font-bold text-white shadow-xl transition-all duration-300 ${
-            paying || !amount || !senderUserId 
-              ? "opacity-50 cursor-not-allowed bg-surface border border-border" 
+            paying || (!amount && !link.amount) || !senderUserId
+              ? "opacity-50 cursor-not-allowed bg-surface border border-border"
               : "scale-[1.02] bg-public hover:bg-public/90 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 border-none"
           }`}
         >
-          {paying ? "Sending secure transaction..." : `Pay ${amount || "0.00"} ${link.tokenSymbol}`}
+          {paying ? "Sending secure transaction..." : `Pay ${amount || link.amount || "0.00"} ${link.tokenSymbol}`}
         </button>
       )}
     </div>
@@ -121,11 +114,8 @@ function PayPage() {
 
 export default function PayPageWrapper() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Pay</h1>
-      <div className="flex min-h-[50vh] items-center justify-center px-4">
-        <PayPage />
-      </div>
+    <div className="flex min-h-[50vh] items-center justify-center px-4">
+      <PayPage />
     </div>
   );
 }

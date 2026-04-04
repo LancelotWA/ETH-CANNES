@@ -6,7 +6,8 @@
       "@/*": ["./*"],
       "@ethcannes/types": ["../../packages/types/src/index.ts"],
       "@ethcannes/ui": ["../../packages/ui/src/index.ts"]
-    }
+    },
+    "typeRoots": ["../../node_modules/@types", "node_modules/@types"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

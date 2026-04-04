@@ -7,10 +7,10 @@ import { DecryptedText } from "@/components/ui/decrypted-text";
 import { motion } from "framer-motion";
 
 export default function ContactsPage() {
-  const activeUserId = useAppStore((state) => state.activeUserId) ?? "de305d54-75b4-431b-adb2-eb6b9e546014";
+  const activeUserId = useAppStore((state) => state.activeUserId);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

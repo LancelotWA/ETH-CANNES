@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { FeedItem } from "@ethcannes/types";
 
 interface FeedItemCardProps {
@@ -25,7 +26,7 @@ export function FeedItemCard({ item }: FeedItemCardProps) {
           <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">"{item.note}"</p>
         )}
       </div>
-      
+
       <div className="text-right flex flex-col items-end">
         <p className="text-sm font-bold uppercase tracking-wider text-white/30 mb-2">{timeAgo}</p>
         <div className="flex flex-wrap items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity justify-end">
