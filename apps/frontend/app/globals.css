@@ -1,16 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-start: #f0fdf4;
-  --bg-end: #ecfeff;
+@layer base {
+  :root {
+    --bg: #09090b;
+    --surface: #101014;
+    --surface-hover: #16161b;
+    --border: #23232c;
+    --border-hover: #32323d;
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --public: #10b981;
+    --public-dim: rgba(16, 185, 129, 0.15);
+    --private: #8b5cf6;
+    --private-dim: rgba(139, 92, 246, 0.15);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Syne', sans-serif;
+  }
+
+  ::selection {
+    background: var(--private);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
 }
 
-body {
-  @apply text-zinc-900;
-  background: radial-gradient(circle at 10% 0%, var(--bg-start), transparent 45%),
-    radial-gradient(circle at 90% 10%, var(--bg-end), transparent 40%),
-    #ffffff;
-  min-height: 100vh;
-}
+@layer utilities {
+  .glass {
+    background: rgba(16, 16, 20, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+  }
+  .glass-card {
+    background: rgba(20, 20, 25, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+}

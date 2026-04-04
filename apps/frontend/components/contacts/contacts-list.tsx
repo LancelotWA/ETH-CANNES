@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { getJson } from "@/lib/api";
+import { useApiQuery } from "@/hooks/useApi";
 import type { Contact } from "@ethcannes/types";
 
 interface ContactsListProps {
@@ -10,45 +8,40 @@ interface ContactsListProps {
 }
 
 export function ContactsList({ userId }: ContactsListProps) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: contacts, isLoading } = useApiQuery<Contact[]>(`/contacts/${userId}`);
 
-  useEffect(() => {
-    getJson<Contact[]>(`/contacts/${userId}`)
-      .then(setContacts)
-      .finally(() => setLoading(false));
-  }, [userId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-14 animate-pulse rounded-2xl bg-zinc-100" />
+          <div key={i} className="h-16 animate-pulse rounded-2xl glass-card bg-surface/50" />
         ))}
       </div>
     );
   }
 
-  if (contacts.length === 0) {
+  const items = contacts ?? [];
+
+  if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-200 py-12 text-center">
-        <p className="text-sm text-zinc-400">No contacts yet.</p>
-        <p className="mt-1 text-xs text-zinc-300">
+      <div className="glass-card rounded-2xl border-dashed py-16 text-center">
+        <p className="text-sm text-text font-medium mb-1">No contacts yet.</p>
+        <p className="mt-1 text-xs text-text-muted">
           Contacts are added automatically when you send payments.
         </p>
       </div>
     );
   }
 
-  const regular = contacts.filter((c) => !c.isGhost);
-  const ghosts = contacts.filter((c) => c.isGhost);
+  const regular = items.filter((c) => !c.isGhost);
+  const ghosts = items.filter((c) => c.isGhost);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 mt-4">
       {regular.length > 0 && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Contacts</h3>
-          <ul className="space-y-2">
+          <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-text-muted/80 pb-2 border-b border-border">Connections</h3>
+          <ul className="space-y-3">
             {regular.map((c) => (
               <ContactRow key={c.id} contact={c} />
             ))}
@@ -57,11 +50,11 @@ export function ContactsList({ userId }: ContactsListProps) {
       )}
       {ghosts.length > 0 && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-private/80 pb-2 border-b border-border">
             Ghost contacts
-            <span className="ml-1 font-normal normal-case text-zinc-300">(private payments only)</span>
+            <span className="ml-2 font-normal normal-case text-private-dim/80 hidden sm:inline">(private payments only)</span>
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {ghosts.map((c) => (
               <ContactRow key={c.id} contact={c} />
             ))}
@@ -74,21 +67,22 @@ export function ContactsList({ userId }: ContactsListProps) {
 
 function ContactRow({ contact }: { contact: Contact }) {
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
+    <li className="flex items-center gap-4 rounded-xl border border-white/5 bg-surface p-4 shadow-sm transition-transform hover:scale-[1.01]">
       <div
-        className={[
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg shadow-[inset_0_2px_4px_rgba(255,255,255,0.1)] ${
           contact.isGhost
-            ? "bg-violet-100 text-violet-600"
-            : "bg-zinc-100 text-zinc-600"
-        ].join(" ")}
+            ? "bg-private-dim text-private border border-private/20 shadow-[0_0_10px_rgba(139,92,246,0.15)]"
+            : "bg-public-dim text-public border border-public/20 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+        }`}
       >
         {contact.isGhost ? "👻" : (contact.alias[0] ?? "?").toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium text-zinc-800">{contact.alias}</p>
-        {contact.isGhost && (
-          <p className="text-xs text-violet-400">No on-chain link · private contact</p>
+        <p className="truncate text-base font-bold text-white tracking-wide">{contact.alias}</p>
+        {contact.isGhost ? (
+          <p className="text-xs font-medium text-private/80 mt-0.5">No on-chain link · Private connection</p>
+        ) : (
+          <p className="text-xs font-medium text-public/80 mt-0.5">Public connection</p>
         )}
       </div>
     </li>

@@ -1,43 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { getJson } from "@/lib/api";
+import { useApiQuery } from "@/hooks/useApi";
 import type { FeedItem } from "@ethcannes/types";
 import { FeedItemCard } from "./feed-item";
 
 export function FeedList() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: items, isLoading } = useApiQuery<FeedItem[]>("/feed", {
+    refetchInterval: 30000,
+  });
 
-  useEffect(() => {
-    getJson<FeedItem[]>("/feed")
-      .then(setItems)
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-zinc-100" />
+          <div key={i} className="h-28 animate-pulse rounded-2xl glass-card bg-surface/50" />
         ))}
       </div>
     );
   }
 
-  if (items.length === 0) {
+  const feedItems = items ?? [];
+
+  if (feedItems.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-200 py-12 text-center">
-        <p className="text-sm text-zinc-400">No public transactions yet.</p>
-        <p className="mt-1 text-xs text-zinc-300">Send a public payment to see it here!</p>
+      <div className="glass-card rounded-2xl border-dashed py-16 text-center">
+        <p className="text-sm text-text font-medium mb-1">No public transactions yet.</p>
+        <p className="text-xs text-text-muted">Send a public payment to see it here!</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {items.map((item) => (
+    <div className="space-y-4">
+      {feedItems.map((item) => (
         <FeedItemCard key={item.id} item={item} />
       ))}
     </div>
