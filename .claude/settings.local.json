@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(vercel --yes)",
+      "Bash(vercel --yes --name=ethcannes-pay)"
     ]
   }
 }
