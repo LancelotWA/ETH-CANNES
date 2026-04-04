@@ -39,3 +39,7 @@ apps/backend/node_modules/.prisma/
 # Misc
 tmp/
 .cache/
+
+# Claude memory
+project_personne_d.md
+MEMORY.md
