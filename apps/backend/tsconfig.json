@@ -7,7 +7,9 @@
       "@/*": ["src/*"],
       "@ethcannes/types": ["../../packages/types/src/index.ts"],
       "@ethcannes/ui": ["../../packages/ui/src/index.ts"]
-    }
+    },
+    "typeRoots": ["../../node_modules/@types", "node_modules/@types"],
+    "types": ["node", "jest"]
   },
   "include": ["src", "test", "prisma"]
 }

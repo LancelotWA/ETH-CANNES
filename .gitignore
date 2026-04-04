@@ -39,3 +39,10 @@ apps/backend/node_modules/.prisma/
 # Misc
 tmp/
 .cache/
+
+lancelot.js
+lancelot2.js
+
+# Claude memory
+project_personne_d.md
+MEMORY.md

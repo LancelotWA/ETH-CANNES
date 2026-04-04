@@ -13,7 +13,6 @@ import { QrCodesModule } from "./modules/qr-codes/qr-codes.module";
 import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { UnilinkModule } from "./modules/unilink/unilink.module";
 import { UsersModule } from "./modules/users/users.module";
-import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
   imports: [
@@ -30,7 +29,6 @@ import { PrismaModule } from "./prisma/prisma.module";
         }
       ]
     }),
-    PrismaModule,
     AuthModule,
     UsersModule,
     EnsModule,

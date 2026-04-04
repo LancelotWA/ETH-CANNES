@@ -1,7 +1,9 @@
 export type WalletAddress = `0x${string}`;
+export type HexHash = `0x${string}`;
 export type PaymentMode = "PUBLIC" | "PRIVATE";
 export type QrCodeType = "ONE_TIME" | "PERMANENT";
 export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED";
+export type TransactionSource = "ONCHAIN" | "UNLINK";
 
 // ─── User ───────────────────────────────────────────────────────────────────
 
@@ -36,12 +38,80 @@ export interface TransactionRecord {
   recipient?: UserSummary | null;
 }
 
+export interface PublicTransaction {
+  id: string;
+  source: "ONCHAIN";
+  mode: "PUBLIC";
+  txHash: HexHash;
+  blockNumber: bigint | null;
+  from: WalletAddress;
+  to: WalletAddress;
+  amount: number;
+  tokenSymbol: string;
+  tokenAddress: WalletAddress | null;
+  note: string | null;
+  createdAt: string;
+  status: TransactionStatus;
+}
+
+export interface PrivateTransaction {
+  id: string;
+  source: "UNLINK";
+  mode: "PRIVATE";
+  unlinkId: string;
+  amount: number;
+  tokenSymbol: string;
+  note: string | null;
+  createdAt: string;
+  status: TransactionStatus;
+  /** Optional settlement hash when private payment is later anchored on-chain */
+  txHash: HexHash | null;
+}
+
+export interface UnifiedTransaction {
+  id: string;
+  source: TransactionSource;
+  mode: PaymentMode;
+  amount: number;
+  tokenSymbol: string;
+  note: string | null;
+  txHash: HexHash | null;
+  createdAt: string;
+  status: TransactionStatus;
+  sender: UserSummary | null;
+  recipient: UserSummary | null;
+  senderAddress: WalletAddress | null;
+  recipientAddress: WalletAddress | null;
+  unlinkId?: string;
+  blockNumber?: bigint | null;
+}
+
 export interface ReactionRecord {
   id: string;
   transactionId: string;
   userId: string;
   emoji: string;
   createdAt: string;
+}
+
+// ─── Public Transaction History ─────────────────────────────────────────────
+
+export interface PublicTransferRecord {
+  from: WalletAddress;
+  to: WalletAddress;
+  amount: number;
+  note: string | null;
+  timestamp: string;
+  txHash: HexHash;
+}
+
+export interface OnChainReaction {
+  emoji: string;
+  from: WalletAddress;
+  amount: number;
+  txHash: HexHash;
+  targetTxHash: HexHash;
+  timestamp: string;
 }
 
 // ─── Feed ───────────────────────────────────────────────────────────────────
@@ -178,6 +248,15 @@ export const UNLINK_CHAIN_ID = 84532;
 
 export interface VerifyWalletPayload {
   walletAddress: WalletAddress;
-  message: string;
+  nonce: string;
   signature: string;
+}
+
+export interface AuthNonceResponse {
+  nonce: string;
+  message: string;
+}
+
+export interface VerifyWalletResponse {
+  jwt: string;
 }

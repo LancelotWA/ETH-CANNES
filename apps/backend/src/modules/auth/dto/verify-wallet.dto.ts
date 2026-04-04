@@ -6,7 +6,7 @@ export class VerifyWalletDto {
 
   @IsString()
   @IsNotEmpty()
-  message!: string;
+  nonce!: string;
 
   @IsString()
   @IsNotEmpty()
