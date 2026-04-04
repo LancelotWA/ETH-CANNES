@@ -1,15 +1,18 @@
 "use client";
 
-import { useAccount, useDisconnect, useBalance, useConnect } from "wagmi";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit } from "@reown/appkit/react";
+import { useBalance } from "wagmi";
 import { useState, useEffect } from "react";
 
 export function WalletConnection() {
   const [mounted, setMounted] = useState(false);
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { connect, connectors, isPending } = useConnect();
+  const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
 
-  const { data: balanceData } = useBalance({ address });
+  const { data: balanceData } = useBalance({
+    address: address as `0x${string}` | undefined,
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -35,31 +38,21 @@ export function WalletConnection() {
         </p>
         <button
           className="mt-4 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-black text-white/50 transition-all hover:bg-white/10 hover:text-white"
-          onClick={() => disconnect()}
+          onClick={() => open()}
         >
-          DISCONNECT
+          WALLET
         </button>
       </div>
     );
   }
 
-  const handleConnect = () => {
-    const wc = connectors.find((c) => c.id === "walletConnect");
-    if (wc) {
-      connect({ connector: wc });
-    }
-  };
-
   return (
     <div className="mt-2 text-center">
       <button
-        onClick={handleConnect}
-        disabled={isPending}
-        className={`rounded-[2rem] px-6 py-3 font-black uppercase text-base shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all hover:scale-105 active:scale-95 ${
-          isPending ? "bg-white/20 text-white/50 cursor-not-allowed" : "bg-white text-black"
-        }`}
+        onClick={() => open()}
+        className="rounded-[2rem] px-6 py-3 font-black uppercase text-base shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all hover:scale-105 active:scale-95 bg-white text-black"
       >
-        {isPending ? "CONNECTING..." : "CONNECT WALLET"}
+        CONNECT WALLET
       </button>
     </div>
   );
