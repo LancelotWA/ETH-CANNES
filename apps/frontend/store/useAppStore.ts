@@ -32,6 +32,15 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ globalPaymentMode: state.globalPaymentMode === "PRIVATE" ? "PUBLIC" : "PRIVATE" })),
       setLastScannedBlock: (lastScannedBlock) => set({ lastScannedBlock }),
     }),
-    { name: 'ethcannes-store' }
+    {
+      name: 'ethcannes-store',
+      partialize: (state) => ({
+        activeUserId: state.activeUserId,
+        walletAddress: state.walletAddress,
+        isConnected: state.isConnected,
+        authToken: state.authToken,
+        globalPaymentMode: state.globalPaymentMode,
+      }),
+    }
   )
 )
