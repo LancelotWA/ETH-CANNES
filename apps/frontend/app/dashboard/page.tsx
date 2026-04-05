@@ -42,11 +42,12 @@ export default function DashboardPage() {
   };
 
   const ETH_PRICE = 3500;
+  const hasBalance = balance && balance.value > 0n;
   const ethAmt = balance
     ? Number(balance.value) / 10 ** balance.decimals
     : 0;
-  const formattedEth = ethAmt.toFixed(4);
-  const formattedUsd = (ethAmt * ETH_PRICE).toFixed(2);
+  const formattedEth = hasBalance ? ethAmt.toFixed(4) : "—";
+  const formattedUsd = hasBalance ? (ethAmt * ETH_PRICE).toFixed(2) : "—";
 
   const shortAddr = address
     ? `${address.slice(0, 6)}···${address.slice(-4)}`
@@ -59,12 +60,22 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-[100dvh] flex flex-col pb-28 max-w-md mx-auto"
-      style={{ background: "var(--bg)" }}
+      className="min-h-[100dvh] flex flex-col items-center pb-28 max-w-md mx-auto px-4 pt-4"
     >
+      {/* ── GLASS CONTAINER ──────────────────────────── */}
+      <div
+        className="w-full flex-1 rounded-[24px] p-5 flex flex-col gap-4"
+        style={{
+          background: "rgba(255,255,255,0.005)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        }}
+      >
+
       {/* ── HEADER ─────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-5 pt-5 pb-2 pl-[168px]">
-        {/* pl-[168px] clears the fixed toggle (148px) + gap */}
+      <header className="flex items-center justify-between">
         <span
           className="text-xs font-sans"
           style={{ color: "var(--text-muted)" }}
@@ -77,8 +88,8 @@ export default function DashboardPage() {
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans"
             style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "var(--text-muted)",
             }}
           >
@@ -102,12 +113,13 @@ export default function DashboardPage() {
       </header>
 
       {/* ── BALANCES ───────────────────────────────── */}
-      <div className="px-4 mt-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         {isPrivate && (
           <div
             className="relative overflow-hidden rounded-[20px] p-6"
             style={{
-              background: "linear-gradient(145deg,#1A1A1C 0%,#111113 100%)",
+              background: "linear-gradient(145deg,rgba(26,26,28,0.8) 0%,rgba(17,17,19,0.8) 100%)",
+              backdropFilter: "blur(12px)",
               border: "1px solid rgba(124,58,237,0.3)",
               boxShadow: "0 0 48px rgba(124,58,237,0.15)",
             }}
@@ -136,13 +148,41 @@ export default function DashboardPage() {
                 : unlinkBalances.map((b) => `${(Number(b.amount) / 1e18).toFixed(4)} ${b.token.slice(0, 6)}…`).join(" · ")}
             </p>
 
-            <div className="flex gap-3 mt-6">
-              <button className="flex-1 py-2.5 rounded-[12px] text-[11px] font-bold font-sans tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#7C3AED,#6366F1)", boxShadow: "0 4px 16px rgba(124,58,237,0.3)" }}>
+            {/* Claimable balance */}
+            <div
+              className="mt-4 rounded-[14px] p-4"
+              style={{
+                background: "rgba(124,58,237,0.08)",
+                border: "1px solid rgba(124,58,237,0.2)",
+              }}
+            >
+              <p className="text-[10px] font-semibold tracking-widest uppercase mb-1.5" style={{ color: "#A78BFA" }}>
+                Claimable
+              </p>
+              <div className="flex items-end justify-between">
+                <p className="text-xl font-bold" style={{ color: "#A78BFA" }}>
+                  0.00 <span className="text-xs">ETH</span>
+                </p>
+                <button
+                  className="px-3 py-1.5 rounded-[8px] text-[10px] font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: "rgba(124,58,237,0.15)",
+                    color: "#A78BFA",
+                    border: "1px solid rgba(124,58,237,0.3)",
+                  }}
+                >
+                  CLAIM
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <TransitionLink href="/deposit" className="flex-1 py-2.5 rounded-[12px] text-[11px] font-bold font-sans tracking-widest text-white text-center transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#7C3AED,#6366F1)", boxShadow: "0 4px 16px rgba(124,58,237,0.3)" }}>
                 DEPOSIT
-              </button>
-              <button className="flex-1 py-2.5 rounded-[12px] text-[11px] font-bold font-sans tracking-widest text-[#A78BFA] transition-all hover:bg-white/10 active:scale-[0.98]" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(124,58,237,0.15)" }}>
+              </TransitionLink>
+              <TransitionLink href="/withdraw" className="flex-1 py-2.5 rounded-[12px] text-[11px] font-bold font-sans tracking-widest text-[#A78BFA] text-center transition-all hover:bg-white/10 active:scale-[0.98]" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(124,58,237,0.15)" }}>
                 WITHDRAW
-              </button>
+              </TransitionLink>
             </div>
           </div>
         )}
@@ -150,7 +190,7 @@ export default function DashboardPage() {
         {/* Main/Public Balance */}
         <div
           className={`relative overflow-hidden ${isPrivate ? "rounded-[16px] p-4 flex items-center justify-between" : "rounded-[20px] p-6"}`}
-          style={isPrivate ? { background: "var(--surface)", border: "1px solid var(--border)" } : { background: "linear-gradient(145deg,#2563EB 0%,#1D4ED8 100%)", boxShadow: "0 12px 40px rgba(37,99,235,0.35)" }}
+          style={isPrivate ? { background: "var(--surface)", border: "1px solid var(--border)" } : { background: "linear-gradient(145deg,rgba(37,99,235,0.85) 0%,rgba(29,78,216,0.85) 100%)", backdropFilter: "blur(12px)", boxShadow: "0 12px 40px rgba(37,99,235,0.25)" }}
         >
           {!isPrivate && (
             <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-sans font-semibold tracking-widest" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
@@ -186,30 +226,20 @@ export default function DashboardPage() {
       </div>
 
       {/* ── ACTION BUTTONS ─────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 px-4 mt-5">
+      <div className="grid grid-cols-2 gap-3">
         {actions.map(({ label, icon: Icon, href }) => (
           <TransitionLink
             key={label}
             href={href}
-            className="btn-press flex flex-col items-center gap-2.5 py-4 rounded-[16px]"
+            className="btn-press flex items-center justify-center gap-3 py-5 rounded-[16px] transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
+              background: "var(--accent)",
+              color: "#fff",
+              boxShadow: "0 4px 16px var(--accent-dim)",
             }}
           >
-            {/* Icon container */}
-            <div
-              className="w-11 h-11 rounded-[12px] flex items-center justify-center transition-colors"
-              style={{
-                background: "var(--accent-dim)",
-              }}
-            >
-              <Icon size={20} style={{ color: "var(--accent)" }} />
-            </div>
-            <span
-              className="text-xs font-sans font-medium"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <Icon size={22} color="#fff" />
+            <span className="text-sm font-bold">
               {label}
             </span>
           </TransitionLink>
@@ -218,7 +248,7 @@ export default function DashboardPage() {
 
 
       {/* ── RECENT ACTIVITY ────────────────────────────── */}
-      <div className="px-4 mt-6 flex-1">
+      <div className="mt-2 flex-1">
         <div className="flex items-center justify-between mb-3">
           <h3
             className="text-[11px] font-sans font-semibold tracking-widest uppercase"
@@ -265,6 +295,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      </div>{/* end glass container */}
     </div>
   );
 }

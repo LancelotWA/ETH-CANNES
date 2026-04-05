@@ -2,7 +2,6 @@
 
 import { Suspense } from "react";
 import { SendPaymentForm } from "@/components/payments/send-payment-form";
-import { WalletConnection } from "@/components/wallet/wallet-connection";
 import { DecryptedText } from "@/components/ui/decrypted-text";
 import { motion } from "framer-motion";
 
@@ -13,21 +12,35 @@ export default function SendPage() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
-      className="flex flex-col items-center w-full pt-4 md:pt-6 pb-24"
+      className="flex flex-col items-center w-full pt-4 pb-28 px-4 max-w-md mx-auto"
     >
-      <h1 className="text-4xl md:text-[3.5rem] font-black text-white text-center tracking-tighter drop-shadow-2xl mt-0 mb-4">
-        <DecryptedText text="SEND" animateOn="view" speed={160} sequential={true} />
-      </h1>
+      <div
+        className="w-full rounded-[24px] p-5 flex flex-col gap-5"
+        style={{
+          background: "rgba(255,255,255,0.005)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        }}
+      >
+        <h1
+          className="text-2xl font-bold tracking-tight text-center"
+          style={{ color: "var(--text)" }}
+        >
+          <DecryptedText text="SEND" animateOn="view" speed={160} sequential />
+        </h1>
 
-      <div className="w-full max-w-sm mb-6">
-        <WalletConnection />
-      </div>
-
-      <Suspense fallback={<p className="text-zinc-500 animate-pulse text-center">Chargement...</p>}>
-        <div className="w-full max-w-md backdrop-blur-md bg-white/5 p-4 md:p-6 rounded-[2rem] shadow-2xl border border-white/10">
+        <Suspense
+          fallback={
+            <p className="text-sm animate-pulse text-center" style={{ color: "var(--text-muted)" }}>
+              Loading...
+            </p>
+          }
+        >
           <SendPaymentForm />
-        </div>
-      </Suspense>
+        </Suspense>
+      </div>
     </motion.div>
   );
 }

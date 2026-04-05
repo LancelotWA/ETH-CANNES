@@ -171,6 +171,7 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function applyThemeClass(mode: string) {
+  if (typeof document === "undefined") return;
   if (mode === "PUBLIC") {
     document.documentElement.classList.add("theme-public");
     document.body.classList.add("theme-public");

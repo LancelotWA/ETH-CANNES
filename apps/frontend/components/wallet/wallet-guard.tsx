@@ -180,7 +180,7 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
 
     return (
       <div
-        className="min-h-[100dvh] w-full flex flex-col items-center justify-between px-6 py-12 relative z-50 overflow-hidden"
+        className="min-h-[100dvh] w-full flex flex-col items-center justify-between px-6 py-12 relative overflow-hidden"
         style={{
           backgroundColor: bgColor,
           transition: "background-color 0ms", // rAF handles it

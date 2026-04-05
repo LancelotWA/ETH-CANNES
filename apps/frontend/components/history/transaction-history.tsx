@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { getJson } from "@/lib/api";
-import { useAppStore } from "@/store/useAppStore";
 import type { TransactionRecord } from "@ethcannes/types";
 import { ArrowUpRight, ArrowDownLeft, Lock } from "lucide-react";
 
@@ -15,8 +14,6 @@ interface TransactionHistoryProps {
 export function TransactionHistory({ userId, compact = false }: TransactionHistoryProps) {
   const [items, setItems] = useState<TransactionRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
-  const isPrivate = globalPaymentMode === "PRIVATE";
 
   useEffect(() => {
     getJson<TransactionRecord[]>(`/transactions/user/${userId}`)
@@ -54,15 +51,15 @@ export function TransactionHistory({ userId, compact = false }: TransactionHisto
       {displayed.map((tx, i) => {
         const isPrivateTx = tx.mode === "PRIVATE";
         const isLast = i === displayed.length - 1;
+        const isSent = tx.senderUserId === userId;
 
-        // Determine sent vs received (heuristic: status SENT = outgoing)
-        const isSent = tx.status?.toUpperCase() === "SENT" || tx.status?.toUpperCase() === "COMPLETED";
+        // Counterpart info (only for public transactions)
+        const counterpart = isSent ? tx.recipient : tx.sender;
+        const counterpartName = counterpart?.displayName ?? null;
 
-        // In private mode, anonymize private tx counterpart
-        const label =
-          isPrivateTx && isPrivate
-            ? "••••••••"
-            : tx.note ?? (isPrivateTx ? "Private transfer" : "Transfer");
+        // Amount display
+        const amountPrefix = isSent ? "-" : "+";
+        const amountColor = isSent ? "#EF4444" : "#10B981";
 
         return (
           <li
@@ -80,74 +77,66 @@ export function TransactionHistory({ userId, compact = false }: TransactionHisto
               style={
                 isPrivateTx
                   ? { background: "rgba(124,58,237,0.12)" }
-                  : { background: "rgba(37,99,235,0.08)" }
+                  : isSent
+                    ? { background: "rgba(239,68,68,0.1)" }
+                    : { background: "rgba(16,185,129,0.1)" }
               }
             >
               {isPrivateTx ? (
-                <Lock
-                  size={14}
-                  style={{ color: isPrivate ? "#A78BFA" : "#7C3AED" }}
-                />
+                <Lock size={14} color="#A78BFA" />
               ) : isSent ? (
-                <ArrowUpRight
-                  size={14}
-                  style={{ color: "var(--text-muted)" }}
-                />
+                <ArrowUpRight size={14} color="#EF4444" />
               ) : (
-                <ArrowDownLeft
-                  size={14}
-                  style={{ color: "#10B981" }}
-                />
+                <ArrowDownLeft size={14} color="#10B981" />
               )}
             </div>
 
-            {/* Label + status */}
+            {/* Amount + mode badge */}
             <div className="flex-1 min-w-0">
               <p
-                className="text-sm font-mono truncate"
-                style={{ color: "var(--text)" }}
+                className="text-sm font-bold font-mono"
+                style={{ color: isPrivateTx ? "#A78BFA" : amountColor }}
               >
-                {label}
+                {isPrivateTx ? "" : amountPrefix}{tx.amount} {tx.tokenSymbol}
               </p>
-              <p
-                className="text-[11px] font-mono mt-0.5 flex items-center gap-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <div className="flex items-center gap-1.5 mt-0.5">
                 {isPrivateTx ? (
                   <span
                     className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-widest"
-                    style={{
-                      background: "rgba(124,58,237,0.12)",
-                      color: "#A78BFA",
-                    }}
+                    style={{ background: "rgba(124,58,237,0.12)", color: "#A78BFA" }}
                   >
                     PRIVATE
                   </span>
                 ) : (
                   <span
                     className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-widest"
-                    style={{
-                      background: "rgba(37,99,235,0.08)",
-                      color: "var(--accent)",
-                    }}
+                    style={{ background: "rgba(37,99,235,0.08)", color: "var(--accent)" }}
                   >
                     PUBLIC
                   </span>
                 )}
-                {tx.status}
-              </p>
+                <span className="text-[10px] font-mono" style={{ color: "var(--text-subtle)" }}>
+                  {tx.status}
+                </span>
+              </div>
             </div>
 
-            {/* Amount */}
-            <p
-              className="text-sm font-mono font-semibold flex-shrink-0"
-              style={{
-                color: isPrivateTx && isPrivate ? "#A78BFA" : "var(--text)",
-                filter: isPrivateTx && isPrivate ? "none" : "none",
-              }}
-            >
-              {tx.amount} {tx.tokenSymbol}
-            </p>
+            {/* Counterpart address (public only) */}
+            <div className="text-right flex-shrink-0">
+              {isPrivateTx ? (
+                <p className="text-[11px] font-mono" style={{ color: "rgba(167,139,250,0.5)" }}>
+                  Hidden
+                </p>
+              ) : counterpartName ? (
+                <p className="text-[11px] font-mono truncate max-w-[100px]" style={{ color: "var(--text-muted)" }}>
+                  {counterpartName}
+                </p>
+              ) : tx.txHash ? (
+                <p className="text-[10px] font-mono" style={{ color: "var(--text-subtle)" }}>
+                  {tx.txHash.slice(0, 6)}···{tx.txHash.slice(-4)}
+                </p>
+              ) : null}
+            </div>
           </li>
         );
       })}
