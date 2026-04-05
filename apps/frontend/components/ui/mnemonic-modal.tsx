@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, ClipboardEvent, KeyboardEvent } from "react";
-import { X, Eye, EyeOff, Lock } from "lucide-react";
+import { X, Eye, EyeOff, Lock, AlertTriangle, ArrowLeft, Copy } from "lucide-react";
+import { generateMnemonic } from "@scure/bip39";
+import { wordlist } from "@scure/bip39/wordlists/english.js";
 
 interface MnemonicModalProps {
   onConfirm: (mnemonic: string) => void;
@@ -12,6 +14,8 @@ export function MnemonicModal({ onConfirm, onCancel }: MnemonicModalProps) {
   const [words, setWords] = useState<string[]>(Array(12).fill(""));
   const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState("");
+  const [view, setView] = useState<"enter" | "create">("enter");
+  const [generatedMnemonic, setGeneratedMnemonic] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Focus first input on mount
@@ -73,6 +77,68 @@ export function MnemonicModal({ onConfirm, onCancel }: MnemonicModalProps) {
     }
     onConfirm(words.map((w) => w.trim()).join(" "));
   };
+
+  const handleCreateAccount = () => {
+    const mnemonic = generateMnemonic(wordlist, 128);
+    setGeneratedMnemonic(mnemonic);
+    setView("create");
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedMnemonic);
+  };
+
+  if (view === "create") {
+    return (
+      <div
+        className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+      >
+        <div
+          className="w-full max-w-sm rounded-[24px] p-6 flex flex-col gap-6"
+          style={{
+            background: "#111113",
+            border: "1px solid rgba(124,58,237,0.25)",
+            boxShadow: "0 0 60px rgba(124,58,237,0.2), 0 24px 48px rgba(0,0,0,0.6)",
+          }}
+        >
+          <div className="flex justify-between items-center">
+            <button onClick={() => setView("enter")} className="text-[#888892] hover:text-white transition-colors p-1 rounded-full"><ArrowLeft size={18} /></button>
+            <h2 className="text-base font-bold font-sans text-white">Create account</h2>
+            <div className="w-5"></div>
+          </div>
+
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex gap-3 text-red-400">
+            <AlertTriangle size={24} className="flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] font-mono leading-relaxed">
+              Warning, the 12-word sentence below must be kept carefully and not disclosed under any circumstances.
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 relative font-mono text-white text-[14px] leading-8 text-center break-words shadow-inner">
+            {generatedMnemonic}
+          </div>
+
+          <div className="flex justify-center -mt-2">
+            <button onClick={copyToClipboard} className="text-[11px] font-mono flex items-center gap-1.5 text-[#888892] hover:text-white transition-colors py-1.5 px-4 rounded-full hover:bg-white/10">
+              <Copy size={13} /> Copy sentence
+            </button>
+          </div>
+
+          <button
+            onClick={() => setView("enter")}
+            className="w-full h-11 rounded-[12px] text-sm font-sans font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg,#7C3AED,#6366F1)",
+              boxShadow: "0 4px 16px rgba(124,58,237,0.4)",
+            }}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -196,6 +262,17 @@ export function MnemonicModal({ onConfirm, onCancel }: MnemonicModalProps) {
             }}
           >
             Confirm →
+          </button>
+        </div>
+
+        {/* Text option for new account */}
+        <div className="flex justify-center mt-1">
+          <button
+            onClick={handleCreateAccount}
+            className="text-[11px] font-mono hover:text-white transition-colors"
+            style={{ color: "#A78BFA" }}
+          >
+            Create account
           </button>
         </div>
       </div>
