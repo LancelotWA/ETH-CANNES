@@ -1,7 +1,7 @@
 "use client";
 
 import React, { FormEvent, useState } from "react";
-import { useAccount, useBalance, useSendTransaction, useWriteContract } from "wagmi";
+import { useAccount, useBalance, useSendTransaction } from "wagmi";
 import { parseEther, parseUnits } from "viem";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/lib/wagmi";
@@ -9,38 +9,19 @@ import { Wallet } from "lucide-react";
 
 const TOKENS = [
   { symbol: "ETH", label: "Base Sepolia ETH", decimals: 18, address: null },
-  { symbol: "USDC", label: "USDC", decimals: 6, address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" },
-  { symbol: "DAI", label: "DAI", decimals: 18, address: "0x68194a729C2450ad26072b3D33ADaCbcef39D574" },
-  { symbol: "WETH", label: "WETH", decimals: 18, address: "0x4200000000000000000000000000000000000006" },
-  { symbol: "SepoliaETH", label: "Sepolia ETH", decimals: 18, address: null },
 ] as const;
+
+type TokenSymbol = (typeof TOKENS)[number]["symbol"];
 
 import { useAppStore } from "@/store/useAppStore";
 import { api } from "@/lib/api";
 
-const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const;
 const UNLINK_TOKEN = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7";
-
-const ERC20_TRANSFER_ABI = [
-  {
-    name: "transfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
-
-type TokenSymbol = (typeof TOKENS)[number]["symbol"];
 
 export function SendPaymentForm() {
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
   const { sendTransactionAsync } = useSendTransaction();
-  const { writeContractAsync } = useWriteContract();
   const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
   const activeUserId = useAppStore((s) => s.activeUserId);
   const authToken = useAppStore((s) => s.authToken);
@@ -58,10 +39,6 @@ export function SendPaymentForm() {
   const formattedEth = ethAmt.toFixed(4);
   const formattedUsd = (ethAmt * ETH_PRICE).toFixed(2);
   const shortAddr = address ? `${address.slice(0, 6)}···${address.slice(-4)}` : "";
-
-  const selectedToken = TOKENS.find((t) => t.symbol === token)!;
-  const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(recipient);
-
   const isValidUnlinkAddress = /^unlink1[a-z0-9]{50,}$/.test(recipient);
   const isValidEvmAddress = /^0x[a-fA-F0-9]{40}$/.test(recipient);
   const isValidAddress = isPrivate ? isValidUnlinkAddress : isValidEvmAddress;
@@ -131,25 +108,6 @@ export function SendPaymentForm() {
     setError(null);
     setTxHash(null);
     try {
- 
-      let hash: `0x${string}`;
-
-      if (selectedToken.address) {
-        const parsedAmount = parseUnits(amount, selectedToken.decimals);
-        hash = await writeContractAsync({
-          address: selectedToken.address as `0x${string}`,
-          abi: ERC20_TRANSFER_ABI,
-          functionName: "transfer",
-          args: [recipient as `0x${string}`, parsedAmount],
-        });
-      } else {
-        const parsedAmount = parseEther(amount);
-        hash = await sendTransactionAsync({
-          to: recipient as `0x${string}`,
-          value: parsedAmount,
-        });
-      }
-
       if (isPrivate) {
         // Private transfer via Unlink backend
         if (!activeUserId || !authToken) throw new Error("Not authenticated");
@@ -178,24 +136,12 @@ export function SendPaymentForm() {
 
         setStatus("success");
       } else {
-        // Public on-chain transfer
-        let hash: `0x${string}`;
-
-        if (token === "USDC") {
-          const parsedAmount = parseUnits(amount, 6);
-          hash = await writeContractAsync({
-            address: USDC_BASE_SEPOLIA,
-            abi: ERC20_TRANSFER_ABI,
-            functionName: "transfer",
-            args: [recipient as `0x${string}`, parsedAmount],
-          });
-        } else {
-          const parsedAmount = parseEther(amount);
-          hash = await sendTransactionAsync({
-            to: recipient as `0x${string}`,
-            value: parsedAmount,
-          });
-        }
+        // Public on-chain transfer (Base Sepolia ETH)
+        const parsedAmount = parseEther(amount);
+        const hash = await sendTransactionAsync({
+          to: recipient as `0x${string}`,
+          value: parsedAmount,
+        });
 
         setTxHash(hash);
         setStatus("confirming");
@@ -288,7 +234,7 @@ export function SendPaymentForm() {
           onChange={(e) => setAmount(e.target.value)}
           type="number"
           min="0"
-          step={selectedToken.decimals === 6 ? "0.01" : "0.0001"}
+          step="0.0001"
           placeholder="0.00"
           required
         />
@@ -296,11 +242,6 @@ export function SendPaymentForm() {
 
       {/* Recipient */}
       <div>
-        <p
-          className="text-[11px] font-semibold tracking-widest uppercase mb-2"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Recipient
         <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
           {isPrivate ? "Unlink Address" : "Recipient"}
         </p>

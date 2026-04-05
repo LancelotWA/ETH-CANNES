@@ -61,13 +61,16 @@ export class UnilinkService {
    * Create or retrieve the Unlink account for a user.
    * Generates a mnemonic if the user doesn't have one yet.
    */
-  async getOrCreateAccount(userId: string, providedMnemonic?: string): Promise<{ unlinkAddress: string; registered: boolean }> {
+  async getOrCreateAccount(userId: string, providedMnemonic?: string): Promise<{ unlinkAddress: string; evmAddress: string; registered: boolean }> {
     const existingAddress = await this.repository.getUnlinkAddress(userId);
     if (existingAddress) {
-      return { unlinkAddress: existingAddress, registered: true };
+      const evmAddress = this.repository.getEvmAddress(userId)!;
+      return { unlinkAddress: existingAddress, evmAddress, registered: true };
     }
 
     const mnemonic = providedMnemonic ?? this.createMnemonic();
+    const viemAccount = mnemonicToAccount(mnemonic);
+    const evmAddress = viemAccount.address;
     const client = this.createClient(mnemonic);
 
     try {
@@ -78,9 +81,9 @@ export class UnilinkService {
     }
     const unlinkAddress = await client.getAddress();
 
-    await this.repository.setUnlinkAccount(userId, mnemonic, unlinkAddress);
+    await this.repository.setUnlinkAccount(userId, mnemonic, unlinkAddress, evmAddress);
 
-    return { unlinkAddress, registered: true };
+    return { unlinkAddress, evmAddress, registered: true };
   }
 
   /**
@@ -92,6 +95,17 @@ export class UnilinkService {
       throw new NotFoundException(`User ${userId} has no Unlink account`);
     }
     return address;
+  }
+
+  /**
+   * Get the EVM address derived from the user's Unlink mnemonic.
+   */
+  async getEvmAddress(userId: string): Promise<{ evmAddress: string }> {
+    const evmAddress = this.repository.getEvmAddress(userId);
+    if (!evmAddress) {
+      throw new NotFoundException(`User ${userId} has no Unlink account`);
+    }
+    return { evmAddress };
   }
 
   /**

@@ -1,11 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { SendPaymentForm } from "@/components/payments/send-payment-form";
 import { DecryptedText } from "@/components/ui/decrypted-text";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 
 export default function SendPage() {
+  const router = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -14,6 +17,14 @@ export default function SendPage() {
       transition={{ duration: 0.8 }}
       className="flex flex-col items-center w-full pt-4 pb-28 px-4 max-w-md mx-auto"
     >
+      <button
+        onClick={() => router.back()}
+        className="self-start flex items-center gap-1.5 mb-3 text-xs font-sans transition-opacity hover:opacity-60"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
       <div
         className="w-full rounded-[24px] p-5 flex flex-col gap-5"
         style={{

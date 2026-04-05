@@ -1,30 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useBalance } from "wagmi";
+import { parseUnits, formatUnits } from "viem";
 import { motion } from "framer-motion";
 import { DecryptedText } from "@/components/ui/decrypted-text";
-import { Wallet, ArrowDown, Download } from "lucide-react";
+import { Wallet, ArrowDown, ArrowLeft } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
+import { api } from "@/lib/api";
 
 const TOKENS = [
   { symbol: "ETH", label: "Base Sepolia ETH" },
-  { symbol: "USDC", label: "USDC" },
-  { symbol: "DAI", label: "DAI" },
-  { symbol: "WETH", label: "WETH" },
 ] as const;
 
 type TokenSymbol = (typeof TOKENS)[number]["symbol"];
 
+const UNLINK_TOKEN = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7";
+
 export default function WithdrawPage() {
+  const router = useRouter();
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
+  const activeUserId = useAppStore((s) => s.activeUserId);
+  const authToken = useAppStore((s) => s.authToken);
 
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState<TokenSymbol>("ETH");
   const [toAddress, setToAddress] = useState("");
   const [useDefault, setUseDefault] = useState(true);
   const [status, setStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
-  const [claimStatus, setClaimStatus] = useState<"idle" | "pending">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [poolBalance, setPoolBalance] = useState<string>("0");
 
   const ETH_PRICE = 3500;
   const ethAmt = balance ? Number(balance.value) / 10 ** balance.decimals : 0;
@@ -32,25 +39,69 @@ export default function WithdrawPage() {
   const formattedUsd = (ethAmt * ETH_PRICE).toFixed(2);
   const shortAddr = address ? `${address.slice(0, 6)}···${address.slice(-4)}` : "";
 
-  const canWithdraw = Number(amount) > 0 && status !== "pending";
+  const poolBalanceFormatted = formatUnits(BigInt(poolBalance), 18);
+  const canWithdraw = Number(amount) > 0 && status !== "pending" && activeUserId;
 
-  // TODO: fetch real claimable balance from backend GET /api/unilink/balance/:userId
-  const claimableAmount = "0.00";
-  const claimableToken = "ETH";
+  // Fetch pool balance
+  const fetchPoolBalance = useCallback(async () => {
+    if (!activeUserId || !authToken) return;
+    try {
+      const res = await api.get<{ balances: { amount: string; token: string }[] }>(
+        `/unilink/balance/${activeUserId}`,
+        authToken,
+      );
+      const tokenBalance = res.balances?.find((b) => b.token === UNLINK_TOKEN);
+      if (tokenBalance) setPoolBalance(tokenBalance.amount);
+    } catch {
+      // Account may not exist yet
+    }
+  }, [activeUserId, authToken]);
+
+  useEffect(() => {
+    fetchPoolBalance();
+  }, [fetchPoolBalance]);
 
   async function handleWithdraw() {
-    if (!canWithdraw) return;
+    if (!canWithdraw || !activeUserId || !address) return;
     setStatus("pending");
-    // TODO: call backend POST /api/unilink/withdraw
-    // const destination = useDefault ? address : toAddress;
-    setTimeout(() => setStatus("idle"), 1500);
+    setError(null);
+
+    try {
+      const destination = useDefault ? address : toAddress;
+      if (!destination || !/^0x[a-fA-F0-9]{40}$/.test(destination)) {
+        setError("Invalid destination address");
+        setStatus("error");
+        return;
+      }
+
+      const amountWei = parseUnits(amount, 18).toString();
+
+      await api.post(
+        "/unilink/withdraw",
+        {
+          userId: activeUserId,
+          recipientEvmAddress: destination,
+          token: UNLINK_TOKEN,
+          amount: amountWei,
+        },
+        authToken,
+      );
+
+      setStatus("success");
+      // Refresh pool balance
+      await fetchPoolBalance();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Withdraw failed");
+      setStatus("error");
+    }
   }
 
-  async function handleClaim() {
-    setClaimStatus("pending");
-    // TODO: call backend to claim funds into unlink pool address
-    setTimeout(() => setClaimStatus("idle"), 1500);
-  }
+  const statusLabel =
+    status === "pending"
+      ? "WITHDRAWING..."
+      : status === "success"
+        ? "WITHDRAWN !"
+        : "WITHDRAW";
 
   return (
     <motion.div
@@ -60,6 +111,14 @@ export default function WithdrawPage() {
       transition={{ duration: 0.8 }}
       className="flex flex-col items-center w-full pt-4 pb-28 px-4 max-w-md mx-auto"
     >
+      <button
+        onClick={() => router.back()}
+        className="self-start flex items-center gap-1.5 mb-3 text-xs font-sans transition-opacity hover:opacity-60"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
       <div
         className="w-full rounded-[24px] p-5 flex flex-col gap-5"
         style={{
@@ -81,7 +140,7 @@ export default function WithdrawPage() {
           className="text-xs text-center font-sans"
           style={{ color: "var(--text-muted)" }}
         >
-          Withdraw tokens from the Unlink privacy pool
+          Withdraw ULNKm from the Unlink privacy pool
         </p>
 
         {/* Wallet info */}
@@ -108,7 +167,7 @@ export default function WithdrawPage() {
           </div>
         </div>
 
-        {/* ── CLAIMABLE BALANCE ─────────────────────── */}
+        {/* Pool balance */}
         <div
           className="rounded-[16px] p-4"
           style={{
@@ -120,34 +179,10 @@ export default function WithdrawPage() {
             className="text-[11px] font-semibold tracking-widest uppercase mb-2"
             style={{ color: "#A78BFA" }}
           >
-            Claimable in pool
+            Available in pool
           </p>
-          <div className="flex items-end justify-between">
-            <p className="text-2xl font-bold" style={{ color: "#A78BFA" }}>
-              {claimableAmount} <span className="text-sm">{claimableToken}</span>
-            </p>
-            <button
-              onClick={handleClaim}
-              disabled={claimStatus === "pending" || claimableAmount === "0.00"}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{
-                background: claimableAmount !== "0.00"
-                  ? "linear-gradient(135deg,#7C3AED,#6366F1)"
-                  : "rgba(124,58,237,0.15)",
-                color: claimableAmount !== "0.00" ? "#fff" : "#A78BFA",
-                opacity: claimableAmount === "0.00" ? 0.5 : 1,
-                boxShadow: claimableAmount !== "0.00" ? "0 4px 12px rgba(124,58,237,0.3)" : "none",
-              }}
-            >
-              <Download size={12} />
-              {claimStatus === "pending" ? "CLAIMING..." : "CLAIM"}
-            </button>
-          </div>
-          <p
-            className="text-[10px] mt-2 font-sans"
-            style={{ color: "rgba(167,139,250,0.6)" }}
-          >
-            Claim deposits your funds into your Unlink privacy address
+          <p className="text-2xl font-bold" style={{ color: "#A78BFA" }}>
+            {Number(poolBalanceFormatted).toFixed(4)} <span className="text-sm">ULNKm</span>
           </p>
         </div>
 
@@ -159,7 +194,7 @@ export default function WithdrawPage() {
           Unlink Privacy Pool
         </p>
 
-        {/* Arrow indicator — pool to wallet */}
+        {/* Arrow indicator */}
         <div className="flex justify-center">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
@@ -231,6 +266,7 @@ export default function WithdrawPage() {
             {TOKENS.map((t) => (
               <button
                 key={t.symbol}
+                type="button"
                 onClick={() => setToken(t.symbol)}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                 style={{
@@ -275,16 +311,30 @@ export default function WithdrawPage() {
           disabled={!canWithdraw}
           className="w-full py-3.5 rounded-[14px] text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{
-            background: canWithdraw
-              ? "linear-gradient(135deg,#7C3AED,#6366F1)"
-              : "rgba(255,255,255,0.06)",
-            color: canWithdraw ? "#fff" : "var(--text-subtle)",
-            opacity: canWithdraw ? 1 : 0.5,
+            background:
+              status === "success"
+                ? "#10b981"
+                : canWithdraw
+                  ? "linear-gradient(135deg,#7C3AED,#6366F1)"
+                  : "rgba(255,255,255,0.06)",
+            color: canWithdraw || status === "success" ? "#fff" : "var(--text-subtle)",
+            opacity: canWithdraw || status === "success" ? 1 : 0.5,
             boxShadow: canWithdraw ? "0 4px 16px rgba(124,58,237,0.3)" : "none",
           }}
         >
-          {status === "pending" ? "WITHDRAWING..." : "WITHDRAW"}
+          {statusLabel}
         </button>
+
+        {error && (
+          <p className="text-xs text-center font-semibold" style={{ color: "#ef4444" }}>
+            {error}
+          </p>
+        )}
+        {status === "success" && (
+          <p className="text-xs text-center font-semibold" style={{ color: "#10b981" }}>
+            Withdraw confirmed — ULNKm sent to your wallet
+          </p>
+        )}
       </div>
     </motion.div>
   );

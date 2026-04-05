@@ -86,9 +86,10 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
           { walletAddress: address, signature, nonce },
         );
         setWallet(address, address, jwt);
-        console.info("[auth] JWT obtained, userId:", userId);
+        console.info("[auth] JWT obtained");
       } catch (err) {
-        console.error("[auth] failed:", err);
+        console.warn("[auth] failed, using wallet address as userId:", err);
+        setWallet(address, address, "no-auth");
       }
     })();
   }, [isConnected, address, authToken, signMessageAsync, setWallet]);

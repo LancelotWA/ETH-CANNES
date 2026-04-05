@@ -1,29 +1,61 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useBalance } from "wagmi";
+import { useRouter } from "next/navigation";
+import { useAccount, useBalance, useSendTransaction, useWriteContract } from "wagmi";
+import { parseEther, parseUnits } from "viem";
+import { waitForTransactionReceipt } from "@wagmi/core";
+import { wagmiConfig } from "@/lib/wagmi";
 import { motion } from "framer-motion";
 import { DecryptedText } from "@/components/ui/decrypted-text";
-import { Wallet, ArrowDown } from "lucide-react";
+import { Wallet, ArrowDown, ArrowLeft } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
+import { api } from "@/lib/api";
 
 const TOKENS = [
   { symbol: "ETH", label: "Base Sepolia ETH" },
-  { symbol: "USDC", label: "USDC" },
-  { symbol: "DAI", label: "DAI" },
-  { symbol: "WETH", label: "WETH" },
 ] as const;
 
 type TokenSymbol = (typeof TOKENS)[number]["symbol"];
 
+const UNLINK_TOKEN = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7" as const;
+
+const ERC20_ABI = [
+  {
+    name: "transfer",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "mint",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;
+
 export default function DepositPage() {
+  const router = useRouter();
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
+  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync } = useWriteContract();
+  const activeUserId = useAppStore((s) => s.activeUserId);
+  const authToken = useAppStore((s) => s.authToken);
 
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState<TokenSymbol>("ETH");
-  const [fromAddress, setFromAddress] = useState("");
-  const [useDefault, setUseDefault] = useState(true);
-  const [status, setStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "funding" | "depositing" | "success" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   const ETH_PRICE = 3500;
   const ethAmt = balance ? Number(balance.value) / 10 ** balance.decimals : 0;
@@ -31,16 +63,72 @@ export default function DepositPage() {
   const formattedUsd = (ethAmt * ETH_PRICE).toFixed(2);
   const shortAddr = address ? `${address.slice(0, 6)}···${address.slice(-4)}` : "";
 
-  const canDeposit = Number(amount) > 0 && status !== "pending";
+  const canDeposit = Number(amount) > 0 && status !== "funding" && status !== "depositing";
 
   async function handleDeposit() {
-    if (!canDeposit) return;
-    setStatus("pending");
-    // TODO: call backend POST /api/unilink/deposit
-    // const source = useDefault ? address : fromAddress;
-    // await fetch(...)
-    setTimeout(() => setStatus("idle"), 1500); // placeholder
+    if (!canDeposit || !activeUserId || !address) return;
+    setError(null);
+
+    try {
+      // Step 1: Ensure Unlink account exists and get the derived EVM address
+      setStatus("funding");
+      const { evmAddress } = await api.post<{ unlinkAddress: string; evmAddress: string; registered: boolean }>(
+        "/unilink/account",
+        { userId: activeUserId },
+        authToken,
+      );
+
+      const amountWei = parseUnits(amount, 18);
+
+      // Step 2a: Send ETH for gas fees to the derived wallet
+      const gasBuffer = parseEther("0.005");
+      const gasHash = await sendTransactionAsync({
+        to: evmAddress as `0x${string}`,
+        value: gasBuffer,
+      });
+      await waitForTransactionReceipt(wagmiConfig as never, { hash: gasHash });
+
+      // Step 2b: Mint test tokens directly to the derived wallet
+      const mintHash = await writeContractAsync({
+        address: UNLINK_TOKEN,
+        abi: ERC20_ABI,
+        functionName: "mint",
+        args: [evmAddress as `0x${string}`, amountWei],
+      });
+      await waitForTransactionReceipt(wagmiConfig as never, { hash: mintHash });
+
+      // Step 3: Call backend to do the pool deposit (approval + deposit via SDK)
+      setStatus("depositing");
+      await api.post(
+        "/unilink/deposit",
+        {
+          userId: activeUserId,
+          token: UNLINK_TOKEN,
+          amount: amountWei.toString(),
+        },
+        authToken,
+      );
+
+      setStatus("success");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      if (msg.includes("rejected") || msg.includes("denied")) {
+        setError("Transaction cancelled");
+      } else {
+        setError(err instanceof Error ? err.message : "Deposit failed");
+      }
+      setStatus("error");
+    }
   }
+
+  const statusLabel =
+    status === "funding"
+      ? "SENDING TO UNLINK WALLET..."
+      : status === "depositing"
+        ? "DEPOSITING INTO POOL..."
+        : status === "success"
+          ? "DEPOSITED !"
+          : "DEPOSIT";
 
   return (
     <motion.div
@@ -50,6 +138,14 @@ export default function DepositPage() {
       transition={{ duration: 0.8 }}
       className="flex flex-col items-center w-full pt-4 pb-28 px-4 max-w-md mx-auto"
     >
+      <button
+        onClick={() => router.back()}
+        className="self-start flex items-center gap-1.5 mb-3 text-xs font-sans transition-opacity hover:opacity-60"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
       <div
         className="w-full rounded-[24px] p-5 flex flex-col gap-5"
         style={{
@@ -98,53 +194,6 @@ export default function DepositPage() {
           </div>
         </div>
 
-        {/* Source address toggle */}
-        <div>
-          <p
-            className="text-[11px] font-semibold tracking-widest uppercase mb-2"
-            style={{ color: "var(--text-muted)" }}
-          >
-            From
-          </p>
-          <div className="flex gap-2 mb-3">
-            <button
-              onClick={() => setUseDefault(true)}
-              className="flex-1 py-2.5 rounded-[12px] text-xs font-semibold transition-all"
-              style={{
-                background: useDefault ? "var(--accent)" : "rgba(255,255,255,0.06)",
-                color: useDefault ? "#fff" : "var(--text-muted)",
-                border: `1px solid ${useDefault ? "transparent" : "rgba(255,255,255,0.1)"}`,
-              }}
-            >
-              My Wallet
-            </button>
-            <button
-              onClick={() => setUseDefault(false)}
-              className="flex-1 py-2.5 rounded-[12px] text-xs font-semibold transition-all"
-              style={{
-                background: !useDefault ? "var(--accent)" : "rgba(255,255,255,0.06)",
-                color: !useDefault ? "#fff" : "var(--text-muted)",
-                border: `1px solid ${!useDefault ? "transparent" : "rgba(255,255,255,0.1)"}`,
-              }}
-            >
-              Other Address
-            </button>
-          </div>
-          {!useDefault && (
-            <input
-              value={fromAddress}
-              onChange={(e) => setFromAddress(e.target.value)}
-              placeholder="0x..."
-              className="w-full rounded-[12px] px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "var(--text)",
-              }}
-            />
-          )}
-        </div>
-
         {/* Token selector */}
         <div>
           <p
@@ -157,6 +206,7 @@ export default function DepositPage() {
             {TOKENS.map((t) => (
               <button
                 key={t.symbol}
+                type="button"
                 onClick={() => setToken(t.symbol)}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                 style={{
@@ -221,16 +271,30 @@ export default function DepositPage() {
           disabled={!canDeposit}
           className="w-full py-3.5 rounded-[14px] text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{
-            background: canDeposit
-              ? "linear-gradient(135deg,#7C3AED,#6366F1)"
-              : "rgba(255,255,255,0.06)",
-            color: canDeposit ? "#fff" : "var(--text-subtle)",
-            opacity: canDeposit ? 1 : 0.5,
+            background:
+              status === "success"
+                ? "#10b981"
+                : canDeposit
+                  ? "linear-gradient(135deg,#7C3AED,#6366F1)"
+                  : "rgba(255,255,255,0.06)",
+            color: canDeposit || status === "success" ? "#fff" : "var(--text-subtle)",
+            opacity: canDeposit || status === "success" ? 1 : 0.5,
             boxShadow: canDeposit ? "0 4px 16px rgba(124,58,237,0.3)" : "none",
           }}
         >
-          {status === "pending" ? "DEPOSITING..." : "DEPOSIT"}
+          {statusLabel}
         </button>
+
+        {error && (
+          <p className="text-xs text-center font-semibold" style={{ color: "#ef4444" }}>
+            {error}
+          </p>
+        )}
+        {status === "success" && (
+          <p className="text-xs text-center font-semibold" style={{ color: "#10b981" }}>
+            Deposit confirmed
+          </p>
+        )}
       </div>
     </motion.div>
   );
