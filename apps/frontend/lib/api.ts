@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3000'
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -22,7 +22,9 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new ApiError(res.status, body?.message ?? `HTTP ${res.status}`)
+    console.error('[API Error]', res.status, path, body)
+    const message = Array.isArray(body?.message) ? body.message.join(', ') : (body?.message ?? `HTTP ${res.status}`)
+    throw new ApiError(res.status, message)
   }
 
   return res.json() as Promise<T>

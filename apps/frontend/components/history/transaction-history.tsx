@@ -21,6 +21,7 @@ export function TransactionHistory({ userId, compact = false }: TransactionHisto
   useEffect(() => {
     getJson<TransactionRecord[]>(`/transactions/user/${userId}`)
       .then(setItems)
+      .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [userId]);
 

@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState, ClipboardEvent, KeyboardEvent } from "react";
 import { X, Eye, EyeOff, Lock, AlertTriangle, ArrowLeft, Copy } from "lucide-react";
 import { generateMnemonic } from "@scure/bip39";
-import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { wordlist } from "@scure/bip39/wordlists/english";
 
 interface MnemonicModalProps {
   onConfirm: (mnemonic: string) => void;
   onCancel: () => void;
+  loading?: boolean;
 }
 
-export function MnemonicModal({ onConfirm, onCancel }: MnemonicModalProps) {
+export function MnemonicModal({ onConfirm, onCancel, loading = false }: MnemonicModalProps) {
   const [words, setWords] = useState<string[]>(Array(12).fill(""));
   const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState("");
@@ -255,13 +256,14 @@ export function MnemonicModal({ onConfirm, onCancel }: MnemonicModalProps) {
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 h-11 rounded-[12px] text-sm font-sans font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            disabled={loading}
+            className="flex-1 h-11 rounded-[12px] text-sm font-sans font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               background: "linear-gradient(135deg,#7C3AED,#6366F1)",
               boxShadow: "0 4px 16px rgba(124,58,237,0.4)",
             }}
           >
-            Confirm →
+            {loading ? "Registering…" : "Confirm →"}
           </button>
         </div>
 

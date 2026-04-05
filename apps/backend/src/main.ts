@@ -10,9 +10,13 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.use(helmet());
+  const rawOrigin = configService.get<string>("appOrigin", "http://localhost:3000");
+  const allowedOrigins = rawOrigin.split(",").map((o) => o.trim());
   app.enableCors({
-    origin: configService.get<string>("appOrigin", "http://localhost:3000"),
-    credentials: true
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
 
   app.setGlobalPrefix("api");
