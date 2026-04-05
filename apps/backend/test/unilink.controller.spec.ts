@@ -105,15 +105,14 @@ describe("UnilinkController", () => {
 
       const result = await controller.transfer({
         senderUserId: SENDER_ID,
-        recipientUserId: RECIPIENT_ID,
+        recipientUnlinkAddress: "unlink1recipient",
         token: TOKEN,
         amount: "50000000",
-        tokenSymbol: "USDC",
       });
 
       expect(service.transfer).toHaveBeenCalledWith(
         SENDER_ID,
-        RECIPIENT_ID,
+        "unlink1recipient",
         TOKEN,
         "50000000",
       );

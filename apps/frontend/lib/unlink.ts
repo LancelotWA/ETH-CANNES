@@ -9,7 +9,6 @@ export interface HandleContinueResult {
 
 /**
  * Basic sanity check: 12 words, no empty entries.
- * Full cryptographic validation happens server-side via the Unlink SDK.
  */
 function validateMnemonicFormat(mnemonic: string): boolean {
   const words = mnemonic.split(/\s+/).filter(Boolean);
@@ -25,7 +24,6 @@ export async function handleContinue(
   authToken: string | undefined,
   mnemonic?: string,
 ): Promise<HandleContinueResult> {
-
   let finalMnemonic: string;
 
   if (mnemonic) {
@@ -37,7 +35,6 @@ export async function handleContinue(
     }
     finalMnemonic = trimmed;
   } else {
-    console.log("OKKK");
     finalMnemonic = generateMnemonic(wordlist, 128);
   }
 
@@ -47,6 +44,5 @@ export async function handleContinue(
     authToken,
   );
 
-  console.log(result.unlinkAddress);
   return { unlinkAddress: result.unlinkAddress, mnemonic: finalMnemonic };
 }

@@ -15,6 +15,11 @@ export class UnilinkController {
     return this.unlinkService.getOrCreateAccount(dto.userId, dto.mnemonic);
   }
 
+  @Get("evm-address/:userId")
+  getEvmAddress(@Param("userId") userId: string) {
+    return this.unlinkService.getEvmAddress(userId);
+  }
+
   @Get("balance/:userId")
   getBalance(@Param("userId") userId: string) {
     return this.unlinkService.getBalances(userId);

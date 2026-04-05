@@ -1,7 +1,7 @@
-import { IsUUID, IsString, Matches } from "class-validator";
+import { IsString, Matches } from "class-validator";
 
 export class UnilinkDepositDto {
-  @IsUUID()
+  @IsString()
   userId!: string;
 
   @IsString()

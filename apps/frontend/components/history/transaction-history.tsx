@@ -1,28 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getJson } from "@/lib/api";
-import type { TransactionRecord } from "@ethcannes/types";
-import { ArrowUpRight, ArrowDownLeft, Lock } from "lucide-react";
+import { HelpCircle } from "lucide-react";
+
+interface BaseScanTx {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  timeStamp: string;
+  isError: string;
+  functionName: string;
+}
+
+interface DisplayTx {
+  hash: string;
+  from: string;
+  to: string;
+  amount: string;
+  date: string;
+  direction: "in" | "out" | "self";
+}
 
 interface TransactionHistoryProps {
   userId: string;
-  /** Show only the 5 most recent items with no outer padding */
   compact?: boolean;
 }
 
+const BASESCAN_API = "https://api-sepolia.basescan.org/api";
+
+function formatAddr(addr: string | undefined): string | null {
+  if (!addr || addr === "0x" || addr.length < 10) return null;
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function formatAmount(weiStr: string): string {
+  const val = Number(weiStr) / 1e18;
+  if (val === 0) return "0";
+  if (val < 0.0001) return "<0.0001";
+  return val.toFixed(4);
+}
+
+function formatDate(timestamp: string): string {
+  const date = new Date(Number(timestamp) * 1000);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export function TransactionHistory({ userId, compact = false }: TransactionHistoryProps) {
-  const [items, setItems] = useState<TransactionRecord[]>([]);
+  const [items, setItems] = useState<DisplayTx[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getJson<TransactionRecord[]>(`/transactions/user/${userId}`)
-      .then(setItems)
+    if (!userId) return;
+
+    const addr = userId.toLowerCase();
+
+    fetch(
+      `${BASESCAN_API}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=${compact ? 5 : 25}&sort=desc`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status !== "1" || !Array.isArray(data.result)) {
+          setItems([]);
+          return;
+        }
+
+        const txs: DisplayTx[] = (data.result as BaseScanTx[])
+          .filter((tx) => tx.isError === "0")
+          .map((tx) => {
+            const from = tx.from.toLowerCase();
+            const to = tx.to?.toLowerCase() ?? "";
+            const direction: "in" | "out" | "self" =
+              from === addr && to === addr
+                ? "self"
+                : from === addr
+                  ? "out"
+                  : "in";
+
+            return {
+              hash: tx.hash,
+              from: tx.from,
+              to: tx.to,
+              amount: formatAmount(tx.value),
+              date: formatDate(tx.timeStamp),
+              direction,
+            };
+          });
+
+        setItems(txs);
+      })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [userId]);
-
-  const displayed = compact ? items.slice(0, 5) : items;
+  }, [userId, compact]);
 
   if (loading) {
     return (
@@ -30,12 +109,12 @@ export function TransactionHistory({ userId, compact = false }: TransactionHisto
         className="text-xs font-mono animate-pulse px-4 py-5"
         style={{ color: "var(--text-subtle)" }}
       >
-        Loading…
+        Loading...
       </p>
     );
   }
 
-  if (displayed.length === 0) {
+  if (items.length === 0) {
     return (
       <p
         className="text-xs font-mono px-4 py-5"
@@ -48,94 +127,48 @@ export function TransactionHistory({ userId, compact = false }: TransactionHisto
 
   return (
     <ul className="flex flex-col">
-      {displayed.map((tx, i) => {
-        const isPrivateTx = tx.mode === "PRIVATE";
-        const isLast = i === displayed.length - 1;
-        const isSent = tx.senderUserId === userId;
+      {items.map((tx, i) => {
+        const isLast = i === items.length - 1;
+        const prefix = tx.direction === "in" ? "+" : tx.direction === "out" ? "-" : "";
+        const color =
+          tx.direction === "in"
+            ? "#10B981"
+            : tx.direction === "out"
+              ? "#EF4444"
+              : "var(--text-muted)";
 
-        // Counterpart info (only for public transactions)
-        const counterpart = isSent ? tx.recipient : tx.sender;
-        const counterpartName = counterpart?.displayName ?? null;
-
-        // Amount display
-        const amountPrefix = isSent ? "-" : "+";
-        const amountColor = isSent ? "#EF4444" : "#10B981";
+        const counterpart = tx.direction === "in" ? tx.from : tx.to;
+        const counterpartDisplay = formatAddr(counterpart);
 
         return (
           <li
-            key={tx.id}
-            className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-hover)]"
+            key={tx.hash}
+            className="flex items-center justify-between px-4 py-3"
             style={
               !isLast
                 ? { borderBottom: "1px solid var(--border)" }
                 : undefined
             }
           >
-            {/* Direction icon */}
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={
-                isPrivateTx
-                  ? { background: "rgba(124,58,237,0.12)" }
-                  : isSent
-                    ? { background: "rgba(239,68,68,0.1)" }
-                    : { background: "rgba(16,185,129,0.1)" }
-              }
-            >
-              {isPrivateTx ? (
-                <Lock size={14} color="#A78BFA" />
-              ) : isSent ? (
-                <ArrowUpRight size={14} color="#EF4444" />
-              ) : (
-                <ArrowDownLeft size={14} color="#10B981" />
-              )}
-            </div>
-
-            {/* Amount + mode badge */}
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-sm font-bold font-mono"
-                style={{ color: isPrivateTx ? "#A78BFA" : amountColor }}
-              >
-                {isPrivateTx ? "" : amountPrefix}{tx.amount} {tx.tokenSymbol}
+            {/* Left: amount + date */}
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-bold font-mono" style={{ color }}>
+                {prefix}{tx.amount} ETH
               </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                {isPrivateTx ? (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-widest"
-                    style={{ background: "rgba(124,58,237,0.12)", color: "#A78BFA" }}
-                  >
-                    PRIVATE
-                  </span>
-                ) : (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-widest"
-                    style={{ background: "rgba(37,99,235,0.08)", color: "var(--accent)" }}
-                  >
-                    PUBLIC
-                  </span>
-                )}
-                <span className="text-[10px] font-mono" style={{ color: "var(--text-subtle)" }}>
-                  {tx.status}
-                </span>
-              </div>
+              <p className="text-[10px] font-sans" style={{ color: "var(--text-subtle)" }}>
+                {tx.date}
+              </p>
             </div>
 
-            {/* Counterpart address (public only) */}
-            <div className="text-right flex-shrink-0">
-              {isPrivateTx ? (
-                <p className="text-[11px] font-mono" style={{ color: "rgba(167,139,250,0.5)" }}>
-                  Hidden
+            {/* Right: counterpart address */}
+            <div className="text-right">
+              {counterpartDisplay ? (
+                <p className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>
+                  {counterpartDisplay}
                 </p>
-              ) : counterpartName ? (
-                <p className="text-[11px] font-mono truncate max-w-[100px]" style={{ color: "var(--text-muted)" }}>
-                  {counterpartName}
-                </p>
-              ) : tx.txHash ? (
-                <p className="text-[10px] font-mono" style={{ color: "var(--text-subtle)" }}>
-                  {tx.txHash.slice(0, 6)}···{tx.txHash.slice(-4)}
-                </p>
-              ) : null}
+              ) : (
+                <HelpCircle size={14} style={{ color: "var(--text-subtle)" }} />
+              )}
             </div>
           </li>
         );

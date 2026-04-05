@@ -1,26 +1,24 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useAccount, useBalance, useDisconnect } from "wagmi";
-import { useRouter } from "next/navigation";
+import { useAccount, useBalance } from "wagmi";
 import { useAppStore } from "@/store/useAppStore";
 import { TransactionHistory } from "@/components/history/transaction-history";
 import { TransitionLink } from "@/components/ui/transition-link";
-import { Send, ArrowDownLeft, QrCode, Eye, EyeOff, LogOut } from "lucide-react";
+import { Send, ArrowDownLeft, QrCode, Eye, EyeOff, Copy, Check } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function DashboardPage() {
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
-  const { disconnect } = useDisconnect();
-  const router = useRouter();
   const activeUserId = useAppStore((s) => s.activeUserId);
   const authToken = useAppStore((s) => s.authToken);
   const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
-  const storeDisconnect = useAppStore((s) => s.disconnect);
   const isPrivate = globalPaymentMode === "PRIVATE";
 
+  const unlinkAddress = useAppStore((s) => s.unlinkAddress);
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [copiedUnlink, setCopiedUnlink] = useState(false);
   const [unlinkBalances, setUnlinkBalances] = useState<{ token: string; amount: string }[]>([]);
 
   useEffect(() => {
@@ -34,12 +32,6 @@ export default function DashboardPage() {
       .then((res) => { console.log("[balance] result:", res); setUnlinkBalances(res.balances ?? []); })
       .catch((err) => { console.error("[balance] error:", err); setUnlinkBalances([]); });
   }, [activeUserId, authToken, isPrivate]);
-
-  const handleDisconnect = () => {
-    disconnect();
-    storeDisconnect(); // resets adminBypass + auth state
-    router.push("/");
-  };
 
   const ETH_PRICE = 3500;
   const hasBalance = balance && balance.value > 0n;
@@ -100,15 +92,6 @@ export default function DashboardPage() {
             {shortAddr}
           </div>
 
-          {/* Disconnect */}
-          <button
-            onClick={handleDisconnect}
-            className="p-1.5 rounded-full transition-opacity hover:opacity-60"
-            style={{ color: "var(--text-subtle)" }}
-            aria-label="Disconnect"
-          >
-            <LogOut size={14} />
-          </button>
         </div>
       </header>
 
@@ -129,9 +112,33 @@ export default function DashboardPage() {
               PRIVATE
             </div>
 
-            <p className="text-xs font-sans mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>
+            <p className="text-xs font-sans mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>
               Unlink Pool Balance
             </p>
+
+            {unlinkAddress && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(unlinkAddress);
+                  setCopiedUnlink(true);
+                  setTimeout(() => setCopiedUnlink(false), 2000);
+                }}
+                className="flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-full transition-all hover:opacity-80 active:scale-[0.97]"
+                style={{
+                  background: "rgba(124,58,237,0.12)",
+                  border: "1px solid rgba(124,58,237,0.2)",
+                }}
+              >
+                <span className="text-[10px] font-mono" style={{ color: "#A78BFA" }}>
+                  {unlinkAddress.slice(0, 10)}···{unlinkAddress.slice(-6)}
+                </span>
+                {copiedUnlink ? (
+                  <Check size={10} color="#10B981" />
+                ) : (
+                  <Copy size={10} color="#A78BFA" />
+                )}
+              </button>
+            )}
 
             <div className="flex items-end gap-3 mb-1">
               <h2 className="text-[2.75rem] font-bold leading-none tracking-tight text-white" style={{ filter: !balanceVisible ? "blur(16px)" : "none", transition: "filter 0.3s ease" }}>

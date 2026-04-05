@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useBalance } from "wagmi";
 import QRCode from "qrcode";
 import { motion } from "framer-motion";
@@ -9,15 +10,12 @@ import { ArrowLeft, Copy, Check, Wallet } from "lucide-react";
 
 const TOKENS = [
   { symbol: "ETH", label: "ETH", chain: "Base Sepolia" },
-  { symbol: "USDC", label: "USDC", chain: "Base Sepolia" },
-  { symbol: "DAI", label: "DAI", chain: "Base Sepolia" },
-  { symbol: "WETH", label: "WETH", chain: "Base Sepolia" },
-  { symbol: "SepoliaETH", label: "Sepolia ETH", chain: "Sepolia" },
 ] as const;
 
 type Mode = "preset" | "share";
 
 export default function RequestPage() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({ address });
   const [mode, setMode] = useState<Mode | null>(null);
@@ -76,6 +74,14 @@ export default function RequestPage() {
       transition={{ duration: 0.8 }}
       className="flex flex-col items-center w-full pt-4 pb-28 px-4 max-w-md mx-auto"
     >
+      <button
+        onClick={() => router.back()}
+        className="self-start flex items-center gap-1.5 mb-3 text-xs font-sans transition-opacity hover:opacity-60"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
       {/* ── GLASS CONTAINER ──────────────────────────── */}
       <div
         className="w-full rounded-[24px] p-5 flex flex-col gap-5"
