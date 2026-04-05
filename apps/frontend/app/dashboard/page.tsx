@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { TransactionHistory } from "@/components/history/transaction-history";
 import { TransitionLink } from "@/components/ui/transition-link";
 import { Send, ArrowDownLeft, QrCode, Eye, EyeOff, LogOut } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function DashboardPage() {
   const { address } = useAccount();
@@ -14,11 +15,25 @@ export default function DashboardPage() {
   const { disconnect } = useDisconnect();
   const router = useRouter();
   const activeUserId = useAppStore((s) => s.activeUserId);
+  const authToken = useAppStore((s) => s.authToken);
   const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
   const storeDisconnect = useAppStore((s) => s.disconnect);
   const isPrivate = globalPaymentMode === "PRIVATE";
 
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [unlinkBalances, setUnlinkBalances] = useState<{ token: string; amount: string }[]>([]);
+
+  useEffect(() => {
+    console.log("[balance] activeUserId:", activeUserId, "authToken:", !!authToken, "isPrivate:", isPrivate);
+    if (!activeUserId || !authToken || !isPrivate) return;
+    console.log("[balance] fetching...");
+    api.get<{ balances: { token: string; amount: string }[] }>(
+      `/unilink/balance/${activeUserId}`,
+      authToken,
+    )
+      .then((res) => { console.log("[balance] result:", res); setUnlinkBalances(res.balances ?? []); })
+      .catch((err) => { console.error("[balance] error:", err); setUnlinkBalances([]); });
+  }, [activeUserId, authToken, isPrivate]);
 
   const handleDisconnect = () => {
     disconnect();
@@ -120,7 +135,7 @@ export default function DashboardPage() {
 
             <div className="flex items-end gap-3 mb-1">
               <h2 className="text-[2.75rem] font-bold leading-none tracking-tight text-white" style={{ filter: !balanceVisible ? "blur(16px)" : "none", transition: "filter 0.3s ease" }}>
-                $0.00
+                {unlinkBalances.length === 0 ? "$0.00" : `${(Number(unlinkBalances[0].amount) / 1e18).toFixed(4)}`}
               </h2>
               <button onClick={() => setBalanceVisible(!balanceVisible)} className="mb-1.5 transition-opacity hover:opacity-60" style={{ color: "rgba(255,255,255,0.4)" }} aria-label={balanceVisible ? "Hide balance" : "Show balance"}>
                 {balanceVisible ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -128,7 +143,9 @@ export default function DashboardPage() {
             </div>
 
             <p className="text-sm font-sans" style={{ color: "rgba(255,255,255,0.6)", filter: !balanceVisible ? "blur(8px)" : "none", transition: "filter 0.3s ease" }}>
-              0.0000 ETH
+              {unlinkBalances.length === 0
+                ? "0.0000 tokens"
+                : unlinkBalances.map((b) => `${(Number(b.amount) / 1e18).toFixed(4)} ${b.token.slice(0, 6)}…`).join(" · ")}
             </p>
 
             {/* Claimable balance */}

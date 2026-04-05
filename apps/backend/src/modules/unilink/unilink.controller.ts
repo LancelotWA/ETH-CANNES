@@ -12,7 +12,7 @@ export class UnilinkController {
 
   @Post("account")
   createAccount(@Body() dto: CreateUnilinkAccountDto) {
-    return this.unlinkService.getOrCreateAccount(dto.userId);
+    return this.unlinkService.getOrCreateAccount(dto.userId, dto.mnemonic);
   }
 
   @Get("balance/:userId")
@@ -27,9 +27,10 @@ export class UnilinkController {
 
   @Post("transfer")
   transfer(@Body() dto: UnilinkTransferDto) {
+    console.log("[transfer] received body:", JSON.stringify(dto));
     return this.unlinkService.transfer(
       dto.senderUserId,
-      dto.recipientUserId,
+      dto.recipientUnlinkAddress,
       dto.token,
       dto.amount,
     );

@@ -61,16 +61,21 @@ export class UnilinkService {
    * Create or retrieve the Unlink account for a user.
    * Generates a mnemonic if the user doesn't have one yet.
    */
-  async getOrCreateAccount(userId: string): Promise<{ unlinkAddress: string; registered: boolean }> {
+  async getOrCreateAccount(userId: string, providedMnemonic?: string): Promise<{ unlinkAddress: string; registered: boolean }> {
     const existingAddress = await this.repository.getUnlinkAddress(userId);
     if (existingAddress) {
       return { unlinkAddress: existingAddress, registered: true };
     }
 
-    const mnemonic = this.createMnemonic();
+    const mnemonic = providedMnemonic ?? this.createMnemonic();
     const client = this.createClient(mnemonic);
 
-    await client.ensureRegistered();
+    try {
+      await client.ensureRegistered();
+    } catch (err) {
+      console.error("[Unilink] ensureRegistered failed:", err);
+      throw err;
+    }
     const unlinkAddress = await client.getAddress();
 
     await this.repository.setUnlinkAccount(userId, mnemonic, unlinkAddress);
@@ -105,6 +110,8 @@ export class UnilinkService {
    */
   async getBalances(userId: string) {
     const client = await this.clientForUser(userId);
+    console.log("La balance");
+    console.log(await client.getBalances());
     return client.getBalances();
   }
 
@@ -128,21 +135,17 @@ export class UnilinkService {
    */
   async transfer(
     senderUserId: string,
-    recipientUserId: string,
+    recipientUnlinkAddress: string,
     token: string,
     amount: string,
   ): Promise<UnlinkOperationResult> {
-    if (senderUserId === recipientUserId) {
+    const senderAddress = await this.repository.getUnlinkAddress(senderUserId);
+    if (senderAddress === recipientUnlinkAddress) {
       throw new BadRequestException("Cannot transfer to yourself");
     }
 
-    const recipientAddress = await this.repository.getUnlinkAddress(recipientUserId);
-    if (!recipientAddress) {
-      throw new NotFoundException(`Recipient ${recipientUserId} has no Unlink account`);
-    }
-
     const client = await this.clientForUser(senderUserId);
-    const { txId } = await client.transfer({ recipientAddress, token, amount });
+    const { txId } = await client.transfer({ recipientAddress: recipientUnlinkAddress, token, amount });
     const confirmed = await client.pollTransactionStatus(txId);
 
     return { txId, status: confirmed.status as UnlinkOperationResult["status"] };

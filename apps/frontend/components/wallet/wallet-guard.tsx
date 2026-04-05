@@ -1,12 +1,13 @@
 "use client";
 
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { useEffect, useRef, useState } from "react";
 
 import { WalletConnection } from "@/components/wallet/wallet-connection";
 import { SoftAurora } from "@/components/ui/soft-aurora";
 import { IcebergLogo } from "@/components/ui/iceberg-logo";
 import { useAppStore } from "@/store/useAppStore";
+import { api } from "@/lib/api";
 
 // Aurora configs
 const AURORA_NIGHT = {
@@ -44,8 +45,11 @@ const AURORA_DAY = {
 };
 
 export function WalletGuard({ children }: { children: React.ReactNode }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const adminBypass = useAppStore((s) => s.adminBypass);
+  const authToken = useAppStore((s) => s.authToken);
+  const setWallet = useAppStore((s) => s.setWallet);
   const [mounted, setMounted] = useState(false);
 
   // Local cycle state — independent from global mode toggle
@@ -66,6 +70,28 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
       setGlobalPaymentMode("PUBLIC");
     }
   }, [isConnected, setGlobalPaymentMode]);
+
+  // Auth JWT flow: nonce → sign → verify → setWallet
+  useEffect(() => {
+    if (!isConnected || !address || authToken) return;
+
+    (async () => {
+      try {
+        const { nonce, message } = await api.get<{ nonce: string; message: string }>(
+          `/auth/nonce?address=${address}`,
+        );
+        const signature = await signMessageAsync({ message });
+        const { jwt } = await api.post<{ jwt: string }>(
+          `/auth/verify`,
+          { walletAddress: address, signature, nonce },
+        );
+        setWallet(address, address, jwt);
+        console.info("[auth] JWT obtained, userId:", userId);
+      } catch (err) {
+        console.error("[auth] failed:", err);
+      }
+    })();
+  }, [isConnected, address, authToken, signMessageAsync, setWallet]);
 
   // Auto-cycle every 5 s — ONLY on the landing page
   useEffect(() => {

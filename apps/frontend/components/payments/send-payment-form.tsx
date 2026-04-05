@@ -15,6 +15,12 @@ const TOKENS = [
   { symbol: "SepoliaETH", label: "Sepolia ETH", decimals: 18, address: null },
 ] as const;
 
+import { useAppStore } from "@/store/useAppStore";
+import { api } from "@/lib/api";
+
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const;
+const UNLINK_TOKEN = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7";
+
 const ERC20_TRANSFER_ABI = [
   {
     name: "transfer",
@@ -35,6 +41,10 @@ export function SendPaymentForm() {
   const { data: balance } = useBalance({ address });
   const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
+  const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
+  const activeUserId = useAppStore((s) => s.activeUserId);
+  const authToken = useAppStore((s) => s.authToken);
+  const isPrivate = globalPaymentMode === "PRIVATE";
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -51,13 +61,18 @@ export function SendPaymentForm() {
 
   const selectedToken = TOKENS.find((t) => t.symbol === token)!;
   const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(recipient);
+
+  const isValidUnlinkAddress = /^unlink1[a-z0-9]{50,}$/.test(recipient);
+  const isValidEvmAddress = /^0x[a-fA-F0-9]{40}$/.test(recipient);
+  const isValidAddress = isPrivate ? isValidUnlinkAddress : isValidEvmAddress;
+
   const canSend = isValidAddress && Number(amount) > 0 && status !== "sending" && status !== "confirming";
 
   async function handlePaste() {
     try {
-      const text = await navigator.clipboard.readText();
-      if (/^0x[a-fA-F0-9]{40}$/.test(text.trim())) {
-        setRecipient(text.trim());
+      const text = await navigator.clipboard.readText().then((t) => t.trim());
+      if (/^0x[a-fA-F0-9]{40}$/.test(text) || /^unlink1[a-z0-9]{50,}$/.test(text)) {
+        setRecipient(text);
       }
     } catch {
       // clipboard permission denied
@@ -109,14 +124,14 @@ export function SendPaymentForm() {
   }
 
   async function onSubmit(e: FormEvent) {
+
     e.preventDefault();
     if (!canSend || !address) return;
-
     setStatus("sending");
     setError(null);
     setTxHash(null);
-
     try {
+ 
       let hash: `0x${string}`;
 
       if (selectedToken.address) {
@@ -135,12 +150,58 @@ export function SendPaymentForm() {
         });
       }
 
-      setTxHash(hash);
-      setStatus("confirming");
+      if (isPrivate) {
+        // Private transfer via Unlink backend
+        if (!activeUserId || !authToken) throw new Error("Not authenticated");
+        
+        const amountWei = parseUnits(amount, 18).toString();
+ 
 
-      await waitForTransactionReceipt(wagmiConfig as never, { hash });
+        const payload = {
+          senderUserId: activeUserId,
+          recipientUnlinkAddress: recipient,
+          token: UNLINK_TOKEN,
+          amount: amountWei,
+        };
+        console.log('[transfer] payload:', JSON.stringify(payload));
 
-      setStatus("success");
+        await api.post(
+          "/unilink/transfer",
+          {
+            senderUserId: activeUserId,
+            recipientUnlinkAddress: recipient,
+            token: UNLINK_TOKEN,
+            amount: amountWei,
+          },
+          authToken,
+        );
+
+        setStatus("success");
+      } else {
+        // Public on-chain transfer
+        let hash: `0x${string}`;
+
+        if (token === "USDC") {
+          const parsedAmount = parseUnits(amount, 6);
+          hash = await writeContractAsync({
+            address: USDC_BASE_SEPOLIA,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [recipient as `0x${string}`, parsedAmount],
+          });
+        } else {
+          const parsedAmount = parseEther(amount);
+          hash = await sendTransactionAsync({
+            to: recipient as `0x${string}`,
+            value: parsedAmount,
+          });
+        }
+
+        setTxHash(hash);
+        setStatus("confirming");
+        await waitForTransactionReceipt(wagmiConfig as never, { hash });
+        setStatus("success");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message.toLowerCase() : "";
       if (msg.includes("rejected") || msg.includes("denied")) {
@@ -149,6 +210,7 @@ export function SendPaymentForm() {
         setError("Insufficient funds");
       } else {
         setError("Transaction failed");
+        setError(err instanceof Error ? err.message : "Transaction échouée");
       }
       setStatus("error");
     }
@@ -239,6 +301,8 @@ export function SendPaymentForm() {
           style={{ color: "var(--text-muted)" }}
         >
           Recipient
+        <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
+          {isPrivate ? "Unlink Address" : "Recipient"}
         </p>
         <input
           className="w-full rounded-[12px] px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2"
@@ -249,7 +313,7 @@ export function SendPaymentForm() {
           }}
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
-          placeholder="0x..."
+          placeholder={isPrivate ? "unlink1qq..." : "0x..."}
           required
         />
         <button
