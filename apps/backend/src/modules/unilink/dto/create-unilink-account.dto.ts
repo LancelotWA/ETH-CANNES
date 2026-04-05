@@ -1,6 +1,11 @@
-import { IsUUID } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateUnilinkAccountDto {
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   userId!: string;
+
+  @IsOptional()
+  @IsString()
+  mnemonic?: string;
 }

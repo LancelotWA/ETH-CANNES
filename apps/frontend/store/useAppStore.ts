@@ -10,12 +10,14 @@ interface AppState {
   globalPaymentMode: PaymentMode
   lastScannedBlock: bigint
   adminBypass: boolean
+  unlinkAddress: string | null
   setWallet: (address: string, userId: string, token: string) => void
   disconnect: () => void
   togglePaymentMode: () => void
   setLastScannedBlock: (block: bigint) => void
   setAdminBypass: (v: boolean) => void
   setGlobalPaymentMode: (mode: PaymentMode) => void
+  setUnlinkAddress: (address: string) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -28,15 +30,17 @@ export const useAppStore = create<AppState>()(
       globalPaymentMode: "PUBLIC",
       lastScannedBlock: 0n,
       adminBypass: false,
+      unlinkAddress: null,
       setWallet: (address, userId, token) =>
         set({ walletAddress: address, activeUserId: userId, isConnected: true, authToken: token, globalPaymentMode: "PUBLIC" }),
       disconnect: () =>
-        set({ walletAddress: null, activeUserId: null, isConnected: false, authToken: null, adminBypass: false }),
+        set({ walletAddress: null, activeUserId: null, isConnected: false, authToken: null, adminBypass: false, unlinkAddress: null }),
       togglePaymentMode: () =>
         set((state) => ({ globalPaymentMode: state.globalPaymentMode === "PRIVATE" ? "PUBLIC" : "PRIVATE" })),
       setLastScannedBlock: (lastScannedBlock) => set({ lastScannedBlock }),
       setAdminBypass: (v) => set({ adminBypass: v, globalPaymentMode: "PUBLIC" }),
       setGlobalPaymentMode: (mode) => set({ globalPaymentMode: mode }),
+      setUnlinkAddress: (address) => set({ unlinkAddress: address }),
     }),
     {
       name: 'ethcannes-store',

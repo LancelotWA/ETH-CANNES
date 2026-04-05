@@ -4,14 +4,20 @@ import { useAppStore } from "@/store/useAppStore";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { MnemonicModal } from "@/components/ui/mnemonic-modal";
+import { handleContinue } from "@/lib/unlink";
 
 export function GlobalModeSwitch() {
   const globalPaymentMode = useAppStore((s) => s.globalPaymentMode);
   const togglePaymentMode = useAppStore((s) => s.togglePaymentMode);
+  const setUnlinkAddress = useAppStore((s) => s.setUnlinkAddress);
   const adminBypass = useAppStore((s) => s.adminBypass);
-  const { isConnected } = useAccount();
+  const activeUserId = useAppStore((s) => s.activeUserId);
+  const walletAddress = useAppStore((s) => s.walletAddress);
+  const authToken = useAppStore((s) => s.authToken);
+  const { isConnected, address } = useAccount();
   const [mounted, setMounted] = useState(false);
   const [showMnemonic, setShowMnemonic] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -29,11 +35,30 @@ export function GlobalModeSwitch() {
     }
   };
 
-  const handleMnemonicConfirm = (mnemonic: string) => {
-    console.info("[Unlink] mnemonic captured, length:", mnemonic.split(" ").length);
-    // TODO: send mnemonic to backend /unilink/account
-    setShowMnemonic(false);
-    togglePaymentMode();
+  const handleMnemonicConfirm = async (mnemonic: string) => {
+    const userId = activeUserId ?? walletAddress ?? address;
+    if (!userId) {
+      console.error("[Unlink] no user identifier available");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { unlinkAddress } = await handleContinue(
+        userId,
+        authToken ?? undefined,
+        mnemonic,
+      );
+      setUnlinkAddress(unlinkAddress);
+      console.info("[Unlink] registered, address:", unlinkAddress);
+      setShowMnemonic(false);
+      togglePaymentMode();
+    } catch (err) {
+      console.error("[Unlink] registration failed:", err);
+      alert(err instanceof Error ? err.message : "Unlink registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,6 +113,7 @@ export function GlobalModeSwitch() {
         <MnemonicModal
           onConfirm={handleMnemonicConfirm}
           onCancel={() => setShowMnemonic(false)}
+          loading={loading}
         />
       )}
     </>
