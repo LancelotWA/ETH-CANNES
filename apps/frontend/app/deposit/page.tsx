@@ -88,14 +88,25 @@ export default function DepositPage() {
       });
       await waitForTransactionReceipt(wagmiConfig as never, { hash: gasHash });
 
-      // Step 2b: Mint test tokens directly to the derived wallet
-      const mintHash = await writeContractAsync({
-        address: UNLINK_TOKEN,
-        abi: ERC20_ABI,
-        functionName: "mint",
-        args: [evmAddress as `0x${string}`, amountWei],
-      });
-      await waitForTransactionReceipt(wagmiConfig as never, { hash: mintHash });
+      // Step 2b: Mint test tokens to the derived wallet (with retry for faucet rate limiting)
+      let mintHash: `0x${string}` | undefined;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          mintHash = await writeContractAsync({
+            address: UNLINK_TOKEN,
+            abi: ERC20_ABI,
+            functionName: "mint",
+            args: [evmAddress as `0x${string}`, amountWei],
+          });
+          break;
+        } catch (mintErr: unknown) {
+          const isRateLimit =
+            mintErr instanceof Error && mintErr.message.toLowerCase().includes("rate limit");
+          if (!isRateLimit || attempt === 4) throw mintErr;
+          await new Promise((r) => setTimeout(r, 3000 * 2 ** attempt));
+        }
+      }
+      await waitForTransactionReceipt(wagmiConfig as never, { hash: mintHash! });
 
       // Step 3: Call backend to do the pool deposit (approval + deposit via SDK)
       setStatus("depositing");

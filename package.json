@@ -15,7 +15,7 @@
     "format": "npm run format --workspaces"
   },
   "engines": {
-    "node": ">=20.11.0",
+    "node": "20.x",
     "npm": ">=10.2.4"
   },
   "dependencies": {

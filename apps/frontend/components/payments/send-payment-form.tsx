@@ -48,7 +48,26 @@ export function SendPaymentForm() {
   async function handlePaste() {
     try {
       const text = await navigator.clipboard.readText().then((t) => t.trim());
-      if (/^0x[a-fA-F0-9]{40}$/.test(text) || /^unlink1[a-z0-9]{50,}$/.test(text)) {
+      if (text.startsWith("ethereum:")) {
+        const addr = text.split(":")[1].split("@")[0].split("?")[0];
+        if (/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+          setRecipient(addr);
+          const valueMatch = text.match(/[?&]value=(\d+)/);
+          if (valueMatch) {
+            setAmount((Number(BigInt(valueMatch[1])) / 1e18).toString());
+          }
+        }
+      } else if (text.startsWith("unlink:")) {
+        const body = text.slice("unlink:".length);
+        const [addr, qs] = body.split("?");
+        if (/^unlink1[a-z0-9]{50,}$/.test(addr)) {
+          setRecipient(addr);
+          if (qs) {
+            const amt = new URLSearchParams(qs).get("amount");
+            if (amt) setAmount((Number(BigInt(amt)) / 1e18).toString());
+          }
+        }
+      } else if (/^0x[a-fA-F0-9]{40}$/.test(text) || /^unlink1[a-z0-9]{50,}$/.test(text)) {
         setRecipient(text);
       }
     } catch {
@@ -82,10 +101,44 @@ export function SendPaymentForm() {
         for (let i = 0; i < 50; i++) {
           const result = await detect();
           if (result) {
-            const addr = result.startsWith("ethereum:") ? result.split(":")[1].split("@")[0] : result;
-            if (/^0x[a-fA-F0-9]{40}$/.test(addr)) {
-              setRecipient(addr);
-              break;
+            if (result.startsWith("ethereum:")) {
+              // EIP-681: ethereum:0xAddr@chainId?value=wei
+              const addr = result.split(":")[1].split("@")[0].split("?")[0];
+              if (/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+                setRecipient(addr);
+                const valueMatch = result.match(/[?&]value=(\d+)/);
+                if (valueMatch) {
+                  const ethValue = Number(BigInt(valueMatch[1])) / 1e18;
+                  setAmount(ethValue.toString());
+                }
+                break;
+              }
+            } else if (result.startsWith("unlink:")) {
+              // unlink:unlink1xxx?amount=wei&token=0x...
+              const body = result.slice("unlink:".length);
+              const [addr, qs] = body.split("?");
+              if (/^unlink1[a-z0-9]{50,}$/.test(addr)) {
+                setRecipient(addr);
+                if (qs) {
+                  const params = new URLSearchParams(qs);
+                  const amt = params.get("amount");
+                  if (amt) {
+                    const tokenValue = Number(BigInt(amt)) / 1e18;
+                    setAmount(tokenValue.toString());
+                  }
+                }
+                break;
+              }
+            } else {
+              // Raw address
+              if (/^0x[a-fA-F0-9]{40}$/.test(result)) {
+                setRecipient(result);
+                break;
+              }
+              if (/^unlink1[a-z0-9]{50,}$/.test(result)) {
+                setRecipient(result);
+                break;
+              }
             }
           }
           await new Promise((r) => setTimeout(r, 200));

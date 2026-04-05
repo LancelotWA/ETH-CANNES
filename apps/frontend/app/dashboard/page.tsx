@@ -21,6 +21,21 @@ export default function DashboardPage() {
   const [copiedUnlink, setCopiedUnlink] = useState(false);
   const [unlinkBalances, setUnlinkBalances] = useState<{ token: string; amount: string }[]>([]);
 
+  const UNLINK_TEST_TOKEN = "0x7501de8ea37a21e20e6e65947d2ecab0e9f061a7";
+
+  const sortedBalances = [...unlinkBalances].sort((a, b) => {
+    if (a.token.toLowerCase() === UNLINK_TEST_TOKEN.toLowerCase()) return -1;
+    if (b.token.toLowerCase() === UNLINK_TEST_TOKEN.toLowerCase()) return 1;
+    return 0;
+  });
+
+  const erc20Balance = sortedBalances.find(
+    (b) => b.token.toLowerCase() === UNLINK_TEST_TOKEN.toLowerCase(),
+  );
+  const feeBalance = sortedBalances.find(
+    (b) => b.token.toLowerCase() !== UNLINK_TEST_TOKEN.toLowerCase(),
+  );
+
   useEffect(() => {
     console.log("[balance] activeUserId:", activeUserId, "authToken:", !!authToken, "isPrivate:", isPrivate);
     if (!activeUserId || !authToken || !isPrivate) return;
@@ -142,17 +157,19 @@ export default function DashboardPage() {
 
             <div className="flex items-end gap-3 mb-1">
               <h2 className="text-[2.75rem] font-bold leading-none tracking-tight text-white" style={{ filter: !balanceVisible ? "blur(16px)" : "none", transition: "filter 0.3s ease" }}>
-                {unlinkBalances.length === 0 ? "$0.00" : `${(Number(unlinkBalances[0].amount) / 1e18).toFixed(4)}`}
+                {erc20Balance ? (Number(erc20Balance.amount) / 1e18).toFixed(4) : "0.0000"}
               </h2>
+              <span className="text-sm font-sans mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>TST</span>
               <button onClick={() => setBalanceVisible(!balanceVisible)} className="mb-1.5 transition-opacity hover:opacity-60" style={{ color: "rgba(255,255,255,0.4)" }} aria-label={balanceVisible ? "Hide balance" : "Show balance"}>
                 {balanceVisible ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 
             <p className="text-sm font-sans" style={{ color: "rgba(255,255,255,0.6)", filter: !balanceVisible ? "blur(8px)" : "none", transition: "filter 0.3s ease" }}>
-              {unlinkBalances.length === 0
-                ? "0.0000 tokens"
-                : unlinkBalances.map((b) => `${(Number(b.amount) / 1e18).toFixed(4)} ${b.token.slice(0, 6)}…`).join(" · ")}
+              {feeBalance
+                ? `${(Number(feeBalance.amount) / 1e18).toFixed(6)} ETH `
+                : "0.000000 ETH "}
+              <span style={{ color: "rgba(255,255,255,0.35)" }}>(fees)</span>
             </p>
 
             {/* Claimable balance */}
