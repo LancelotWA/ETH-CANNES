@@ -56,7 +56,16 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
   const targetRef = useRef(1); // 1 = night, 0 = day
   const currentRef = useRef(1);
 
+  const setGlobalPaymentMode = useAppStore((s) => s.setGlobalPaymentMode);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // Force public mode when connecting
+  useEffect(() => {
+    if (isConnected) {
+      setGlobalPaymentMode("PUBLIC");
+    }
+  }, [isConnected, setGlobalPaymentMode]);
 
   // Auto-cycle every 5 s — ONLY on the landing page
   useEffect(() => {

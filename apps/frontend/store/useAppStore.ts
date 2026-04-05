@@ -15,6 +15,7 @@ interface AppState {
   togglePaymentMode: () => void
   setLastScannedBlock: (block: bigint) => void
   setAdminBypass: (v: boolean) => void
+  setGlobalPaymentMode: (mode: PaymentMode) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -35,6 +36,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ globalPaymentMode: state.globalPaymentMode === "PRIVATE" ? "PUBLIC" : "PRIVATE" })),
       setLastScannedBlock: (lastScannedBlock) => set({ lastScannedBlock }),
       setAdminBypass: (v) => set({ adminBypass: v, globalPaymentMode: "PUBLIC" }),
+      setGlobalPaymentMode: (mode) => set({ globalPaymentMode: mode }),
     }),
     {
       name: 'ethcannes-store',
