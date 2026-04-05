@@ -24,6 +24,8 @@ createAppKit({
   metadata,
   features: {
     analytics: false,
+    email: false,
+    socials: false,
   },
 });
 

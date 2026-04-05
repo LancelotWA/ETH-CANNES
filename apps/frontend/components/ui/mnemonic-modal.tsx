@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, ClipboardEvent, KeyboardEvent } from "react";
 import { X, Eye, EyeOff, Lock, AlertTriangle, ArrowLeft, Copy } from "lucide-react";
 import { generateMnemonic } from "@scure/bip39";
-import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { wordlist } from "@scure/bip39/wordlists/english";
 
 interface MnemonicModalProps {
   onConfirm: (mnemonic: string) => void;
