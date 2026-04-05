@@ -18,9 +18,9 @@ export function FeedItemCard({ item }: FeedItemCardProps) {
         <p className="text-2xl font-black text-white">{Number(item.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {item.tokenSymbol ?? "USDC"}</p>
         <div className="text-sm text-white/50 mt-1 uppercase font-bold tracking-widest flex items-center gap-2">
           <span className="text-[#10b981]">PUBLIC</span>
-          <span className="text-white shrink-0">{item.sender.ensName ?? item.sender.displayName}</span>
+          <span className="text-white shrink-0">{item.sender.displayName}</span>
           <span className="opacity-50">→</span>
-          <span className="text-white shrink-0">{item.recipient.ensName ?? item.recipient.displayName}</span>
+          <span className="text-white shrink-0">{item.recipient.displayName}</span>
         </div>
         {item.note && (
           <p className="text-sm text-white/30 mt-1 uppercase font-bold tracking-wider">&ldquo;{item.note}&rdquo;</p>

@@ -10,13 +10,12 @@ export type TransactionSource = "ONCHAIN" | "UNLINK";
 export interface UserProfile {
   id: string;
   walletAddress: WalletAddress;
-  ensName: string | null;
   displayName: string;
   avatarUrl: string | null;
   createdAt: string;
 }
 
-export type UserSummary = Pick<UserProfile, "displayName" | "ensName" | "avatarUrl">;
+export type UserSummary = Pick<UserProfile, "displayName" | "avatarUrl">;
 
 // ─── Transactions ───────────────────────────────────────────────────────────
 
